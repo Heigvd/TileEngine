@@ -1,0 +1,1395 @@
+{
+	"frames": {
+		"bridgeEast.png": {
+			"frame": {
+				"x": 1,
+				"y": 1,
+				"w": 100,
+				"h": 63
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 63
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 63
+			}
+		},
+		"bridgeNorth.png": {
+			"frame": {
+				"x": 103,
+				"y": 1,
+				"w": 100,
+				"h": 63
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 63
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 63
+			}
+		},
+		"crossroad.png": {
+			"frame": {
+				"x": 205,
+				"y": 1,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"dirt.png": {
+			"frame": {
+				"x": 307,
+				"y": 1,
+				"w": 100,
+				"h": 58
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 58
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 58
+			}
+		},
+		"dirtHigh.png": {
+			"frame": {
+				"x": 409,
+				"y": 1,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"grass.png": {
+			"frame": {
+				"x": 511,
+				"y": 1,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"hillCornerEast.png": {
+			"frame": {
+				"x": 1,
+				"y": 68,
+				"w": 100,
+				"h": 80
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 80
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 80
+			}
+		},
+		"hillCornerNW.png": {
+			"frame": {
+				"x": 103,
+				"y": 68,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"hillCornerSE.png": {
+			"frame": {
+				"x": 205,
+				"y": 68,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"hillCornerWest.png": {
+			"frame": {
+				"x": 307,
+				"y": 68,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"hillEast.png": {
+			"frame": {
+				"x": 511,
+				"y": 68,
+				"w": 100,
+				"h": 80
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 80
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 80
+			}
+		},
+		"hillNorth.png": {
+			"frame": {
+				"x": 1,
+				"y": 150,
+				"w": 100,
+				"h": 80
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 80
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 80
+			}
+		},
+		"hillRoadEast.png": {
+			"frame": {
+				"x": 103,
+				"y": 150,
+				"w": 100,
+				"h": 80
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 80
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 80
+			}
+		},
+		"hillRoadNorth.png": {
+			"frame": {
+				"x": 205,
+				"y": 150,
+				"w": 100,
+				"h": 80
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 80
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 80
+			}
+		},
+		"hillRoadSouth.png": {
+			"frame": {
+				"x": 307,
+				"y": 150,
+				"w": 101,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 101,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 101,
+				"h": 65
+			}
+		},
+		"hillRoadWest.png": {
+			"frame": {
+				"x": 410,
+				"y": 150,
+				"w": 101,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 101,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 101,
+				"h": 65
+			}
+		},
+		"hillSouth.png": {
+			"frame": {
+				"x": 513,
+				"y": 150,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"hillWest.png": {
+			"frame": {
+				"x": 307,
+				"y": 217,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"lot.png": {
+			"frame": {
+				"x": 409,
+				"y": 217,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotCornerEast.png": {
+			"frame": {
+				"x": 511,
+				"y": 217,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"lotCornerNorth.png": {
+			"frame": {
+				"x": 1,
+				"y": 284,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotCornerSouth.png": {
+			"frame": {
+				"x": 103,
+				"y": 284,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotCornerWest.png": {
+			"frame": {
+				"x": 205,
+				"y": 284,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotEast.png": {
+			"frame": {
+				"x": 307,
+				"y": 284,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"lotExitEast.png": {
+			"frame": {
+				"x": 511,
+				"y": 284,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotExitNorth.png": {
+			"frame": {
+				"x": 1,
+				"y": 352,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotExitSouth.png": {
+			"frame": {
+				"x": 103,
+				"y": 352,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotExitWest.png": {
+			"frame": {
+				"x": 205,
+				"y": 352,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"lotNorth.png": {
+			"frame": {
+				"x": 307,
+				"y": 352,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"lotPark.png": {
+			"frame": {
+				"x": 409,
+				"y": 352,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"lotSouth.png": {
+			"frame": {
+				"x": 511,
+				"y": 352,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"lotWest.png": {
+			"frame": {
+				"x": 307,
+				"y": 419,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadCornerES.png": {
+			"frame": {
+				"x": 409,
+				"y": 419,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadCornerNE.png": {
+			"frame": {
+				"x": 511,
+				"y": 419,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadCornerNW.png": {
+			"frame": {
+				"x": 1,
+				"y": 486,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadCornerWS.png": {
+			"frame": {
+				"x": 103,
+				"y": 486,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadEast.png": {
+			"frame": {
+				"x": 205,
+				"y": 486,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadEndEast.png": {
+			"frame": {
+				"x": 307,
+				"y": 486,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadEndNorth.png": {
+			"frame": {
+				"x": 409,
+				"y": 486,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadEndSouth.png": {
+			"frame": {
+				"x": 511,
+				"y": 486,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadEndWest.png": {
+			"frame": {
+				"x": 1,
+				"y": 553,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadNorth.png": {
+			"frame": {
+				"x": 103,
+				"y": 553,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadTEast.png": {
+			"frame": {
+				"x": 205,
+				"y": 553,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadTNorth.png": {
+			"frame": {
+				"x": 307,
+				"y": 553,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadTSouth.png": {
+			"frame": {
+				"x": 409,
+				"y": 553,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"roadTWest.png": {
+			"frame": {
+				"x": 511,
+				"y": 553,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"treeConiferShort.png": {
+			"frame": {
+				"x": 613,
+				"y": 1,
+				"w": 14,
+				"h": 36
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 14,
+				"h": 36
+			},
+			"sourceSize": {
+				"w": 14,
+				"h": 36
+			}
+		},
+		"treeConiferTall.png": {
+			"frame": {
+				"x": 629,
+				"y": 1,
+				"w": 19,
+				"h": 48
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 19,
+				"h": 48
+			},
+			"sourceSize": {
+				"w": 19,
+				"h": 48
+			}
+		},
+		"treeShort.png": {
+			"frame": {
+				"x": 650,
+				"y": 1,
+				"w": 11,
+				"h": 33
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 11,
+				"h": 33
+			},
+			"sourceSize": {
+				"w": 11,
+				"h": 33
+			}
+		},
+		"treeShort_autumn.png": {
+			"frame": {
+				"x": 650,
+				"y": 36,
+				"w": 11,
+				"h": 33
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 11,
+				"h": 33
+			},
+			"sourceSize": {
+				"w": 11,
+				"h": 33
+			}
+		},
+		"treeTall.png": {
+			"frame": {
+				"x": 409,
+				"y": 71,
+				"w": 11,
+				"h": 44
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 11,
+				"h": 44
+			},
+			"sourceSize": {
+				"w": 11,
+				"h": 44
+			}
+		},
+		"treeTall_autumn.png": {
+			"frame": {
+				"x": 422,
+				"y": 71,
+				"w": 11,
+				"h": 44
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 11,
+				"h": 44
+			},
+			"sourceSize": {
+				"w": 11,
+				"h": 44
+			}
+		},
+		"water.png": {
+			"frame": {
+				"x": 663,
+				"y": 1,
+				"w": 100,
+				"h": 64
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 64
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 64
+			}
+		},
+		"waterBeachCornerEast.png": {
+			"frame": {
+				"x": 663,
+				"y": 67,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"waterBeachCornerNorth.png": {
+			"frame": {
+				"x": 615,
+				"y": 134,
+				"w": 100,
+				"h": 63
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 63
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 63
+			}
+		},
+		"waterBeachCornerSouth.png": {
+			"frame": {
+				"x": 615,
+				"y": 199,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"waterBeachCornerWest.png": {
+			"frame": {
+				"x": 613,
+				"y": 267,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"waterBeachEast.png": {
+			"frame": {
+				"x": 613,
+				"y": 334,
+				"w": 100,
+				"h": 64
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 64
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 64
+			}
+		},
+		"waterBeachNorth.png": {
+			"frame": {
+				"x": 613,
+				"y": 400,
+				"w": 100,
+				"h": 64
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 64
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 64
+			}
+		},
+		"waterBeachSouth.png": {
+			"frame": {
+				"x": 613,
+				"y": 466,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"waterBeachWest.png": {
+			"frame": {
+				"x": 613,
+				"y": 534,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"waterCornerEast.png": {
+			"frame": {
+				"x": 613,
+				"y": 602,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"waterCornerNorth.png": {
+			"frame": {
+				"x": 765,
+				"y": 1,
+				"w": 100,
+				"h": 64
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 64
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 64
+			}
+		},
+		"waterCornerSouth.png": {
+			"frame": {
+				"x": 765,
+				"y": 67,
+				"w": 100,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 66
+			}
+		},
+		"waterCornerWest.png": {
+			"frame": {
+				"x": 717,
+				"y": 135,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"waterEast.png": {
+			"frame": {
+				"x": 717,
+				"y": 202,
+				"w": 100,
+				"h": 63
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 63
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 63
+			}
+		},
+		"waterNorth.png": {
+			"frame": {
+				"x": 715,
+				"y": 267,
+				"w": 100,
+				"h": 63
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 63
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 63
+			}
+		},
+		"waterSouth.png": {
+			"frame": {
+				"x": 715,
+				"y": 332,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		},
+		"waterWest.png": {
+			"frame": {
+				"x": 715,
+				"y": 399,
+				"w": 100,
+				"h": 65
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 65
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 65
+			}
+		}
+	},
+	"meta": {
+		"app": "http://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "spritesheet.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 866,
+			"h": 668
+		},
+		"scale": "1"
+	}
+}
