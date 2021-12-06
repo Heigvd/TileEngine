@@ -31,7 +31,7 @@ interface OSMGroundProps {
     w: number;
     h: number;
   };
-  onLoad: (tiledGround: Mesh) => void;
+  onLoad: (tiledGround: Mesh, tilesURL: string[]) => void;
 }
 
 const defaultPrecision = { w: 2, h: 2 };
@@ -80,6 +80,8 @@ export function OSMGround({
     const blackMaterial = new StandardMaterial("Black", scene);
     blackMaterial.diffuseColor = new Color3(0, 0, 0);
 
+    const tilesURL: string[] = [];
+
     // Create Multi Material
     const multimat = new MultiMaterial("multi", scene);
     for (let row = 0; row < subdivisions.h; row++) {
@@ -88,21 +90,22 @@ export function OSMGround({
           "material" + row + "-" + col,
           scene
         );
-        material.diffuseTexture = new Texture(
-          // "http://b.tile.openstreetmap.org/" +
+        const tileURL =
           "https://a.tile.openstreetmap.fr/osmfr/" +
-            zoom +
-            "/" +
-            (xFirstTile + col) +
-            "/" +
-            (zLastTile - row - 2) +
-            ".png",
-          scene
-        );
+          zoom +
+          "/" +
+          (xFirstTile + col) +
+          "/" +
+          (zLastTile - row - 2) +
+          ".png";
+        tilesURL.push(tileURL);
+        material.diffuseTexture = new Texture(tileURL, scene);
         material.diffuseTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
         material.diffuseTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
         material.specularColor = new Color3(0, 0, 0);
         material.backFaceCulling = false;
+        // Carefull with this one, avoid flickering but cause the sprite to be redered behind
+        // material.useLogarithmicDepth = true;
         multimat.subMaterials.push(material);
       }
     }
@@ -138,7 +141,7 @@ export function OSMGround({
 
     tiledGround.isPickable = true;
 
-    onLoad(tiledGround);
+    onLoad(tiledGround, tilesURL);
 
     // const blob = new Blob(["Welcome to Websparrow.org."],
     //             { type: "text/plain;charset=utf-8" });

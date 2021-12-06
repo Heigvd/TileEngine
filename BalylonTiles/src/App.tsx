@@ -454,14 +454,7 @@ export default function App() {
     minLatitude,
     minLongitude,
     maxLatitude,
-    maxLongitude,
-    zoom,
-    xBounds,
-    zBounds,
-    rawXdelta,
-    rawZdelta,
-    rawXmin,
-    rawZmax
+    maxLongitude
   );
 
   // const testMinPoint = pixel2latLon(xmin, zmin, zoom);

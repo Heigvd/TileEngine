@@ -157,3 +157,11 @@ export function testCoordinateTranslation(
     zmax
   );
 }
+
+export function getHeight(easting: number, northing: number) {
+  return fetch(
+    `https://api3.geo.admin.ch/rest/services/height?easting=${easting}&northing=${northing}`
+  )
+    .then((res) => res.json() as Promise<{ height: string }>)
+    .then(({ height }) => Number(height));
+}

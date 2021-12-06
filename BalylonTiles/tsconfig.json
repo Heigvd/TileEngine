@@ -3,7 +3,7 @@
     "target": "ES2018",
     "module": "esnext",
     "lib": ["ESNext", "dom"],
-    "allowJs": false,
+    "allowJs": true,
     "checkJs": false,
     "resolveJsonModule": true,
     "jsx": "react-jsx",

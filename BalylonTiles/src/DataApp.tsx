@@ -5,6 +5,7 @@ import {
   Scene,
   Mesh,
   VertexBuffer,
+  FloatArray,
 } from "@babylonjs/core";
 import * as React from "react";
 import {
@@ -14,20 +15,22 @@ import {
   wgs84ToXY,
   wgs84ToLV95,
   xyToWGS84,
+  getHeight,
   // wgs84ToLV95Proj,
 } from "./helpers/utils";
-import { useBuildings } from "./hooks/useBuildings";
+import { Building, useBuildings } from "./hooks/useBuildings";
 import { Buffer } from "buffer";
 import { OSMGround } from "./Components/OSMGround";
 import { ReactSceneProps, ReactScene } from "./Components/ReactScene";
 import { useHeights } from "./hooks/useHeights";
-import { useTrees } from "./hooks/useTrees";
+import { Tree, useTrees } from "./hooks/useTrees";
 import { debugBoundaries } from "./helpers/debugging";
 import { worldData } from "./helpers/worldData";
 import { TERRAIN_WIDTH, ZOOM } from "./config";
 import JSZip from "jszip";
 import saveAs from "file-saver";
 import { Buildings } from "./Components/Buildings";
+import { Trees } from "./Components/Trees";
 
 export interface DataCoordinates {
   minLongitude: number;
@@ -49,19 +52,50 @@ const canvasProps: React.CanvasHTMLAttributes<HTMLCanvasElement> = {
   style: { flex: "1 1 auto" },
 };
 
-export default function App() {
-  const [dataCoordinates, setDataCoordinates] = React.useState<DataCoordinates>(
-    {
-      minLongitude: 6.643,
-      maxLongitude: 6.653,
-      minLatitude: 46.779,
-      maxLatitude: 46.784,
-    }
-  );
+interface ExportedValues {
+  trees: "loading" | Tree[];
+  buildings: "loading" | Building[];
+  terrain: {
+    terrainVertices?: "loading" | number[];
+    terrainUV?: "loading" | FloatArray;
+    tiles?: "loading" | Blob[];
+  };
+}
 
-  const [realXYValues, setRealXYValues] = React.useState<
-    number[][] | null | "loading"
-  >(null);
+export default function App() {
+  const [currentCoordinates, setCurrentCoordinates] =
+    React.useState<DataCoordinates>(
+      //HEIG-VD
+      {
+        minLongitude: 6.643,
+        maxLongitude: 6.654,
+        minLatitude: 46.777,
+        maxLatitude: 46.784,
+      }
+      //ZERMATT
+      // {
+      //   minLongitude: 7.72,
+      //   maxLongitude: 7.7674,
+      //   minLatitude: 46.01,
+      //   maxLatitude: 46.029,
+      // }
+      //CAVANDONE
+      // {
+      //   minLongitude: 8.5113,
+      //   maxLongitude: 8.52738,
+      //   minLatitude: 45.94065,
+      //   maxLatitude: 45.94746,
+      // }
+    );
+
+  const [dataCoordinates, setDataCoordinates] =
+    React.useState<DataCoordinates>(currentCoordinates);
+
+  const [exportValues, setExportValues] = React.useState<ExportedValues>({
+    trees: [],
+    terrain: {},
+    buildings: [],
+  });
 
   const {
     minLatitude,
@@ -84,47 +118,26 @@ export default function App() {
     [dataCoordinates]
   );
 
-  React.useEffect(() => {
-    setRealXYValues("loading");
-  }, [xmin, xmax, zmin, zmax, rawXmin, rawZmax, groundSubdivisions]);
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  const [playerPosition, setPlayerPosition] = React.useState<Vector3>(
-    new Vector3(0, 0.3, 0)
-  );
-
   const buildingsData = useBuildings(
     minLatitude,
     minLongitude,
     maxLatitude,
-    maxLongitude,
-    ZOOM
+    maxLongitude
   );
 
   const treesData = useTrees(
     minLatitude,
     minLongitude,
     maxLatitude,
-    maxLongitude,
-    ZOOM,
-    xBounds,
-    zBounds,
-    rawXdelta,
-    rawZdelta,
-    rawXmin,
-    rawZmax
+    maxLongitude
   );
 
-  // const testMinPoint = pixel2latLon(xmin, zmin, zoom);
-  // const testMaxPoint = pixel2latLon(xmax, zmax, zoom);
-
   // const { heights, points } = useHeights(
-  //   testMinPoint.latitude,
-  //   testMinPoint.longitude,
-  //   testMaxPoint.latitude,
-  //   testMaxPoint.longitude,
-  //   zoom,
+  //   minLatitude,
+  //   minLongitude,
+  //   maxLatitude,
+  //   maxLongitude,
+  //   ZOOM,
   //   xBounds,
   //   zBounds,
   //   rawXdelta,
@@ -133,150 +146,53 @@ export default function App() {
   //   rawZmax
   // );
 
-  // console.log({
-  //   xmin,
-  //   zmin,
-  //   xmax,
-  //   zmax,
-  // });
-
-  // const { lon: minLongitude, lat: minLatitude } = tileToLonLat(
-  //   tileXmin,
-  //   tileZmin,
-  //   zoom
-  // );
-
-  // console.log({
-  //   minLatitude,
-  //   minLongitude,
-  //   maxLatitude,
-  //   maxLongitude,
-  // });
-  // console.log({
-  //   minLatitude: testMinPoint.latitude,
-  //   minLongitude: testMinPoint.longitude,
-  //   maxLatitude: testMaxPoint.latitude,
-  //   maxLongitude: testMaxPoint.longitude,
-  // });
-
-  const { heights, points } = useHeights(
-    minLatitude,
-    minLongitude,
-    maxLatitude,
-    maxLongitude,
-    ZOOM,
-    xBounds,
-    zBounds,
-    rawXdelta,
-    rawZdelta,
-    rawXmin,
-    rawZmax
-  );
-
-  // if (playerPosition != null) {
-  //   const buildingSegments = buildingsData
-  //     .flatMap((building, buildingIndex) => {
-  //       return building.points.map((point, i, points) => {
-  //         const nextPointIndex = (i + 1) % points.length;
-  //         const nextPoint = points[nextPointIndex];
-  //         return {
-  //           index: buildingIndex,
-  //           initPoint: { x: point.x, y: point.y, z: point.z },
-  //           endPoint: { x: nextPoint.x, y: nextPoint.y, z: nextPoint.z },
-  //           angle: Math.atan2(
-  //             point.z - playerPosition?.z,
-  //             point.x - playerPosition?.x
-  //           ),
-  //           squareDistance: point.x * point.x + point.z * point.z,
-  //         };
-  //       });
-  //     })
-  //     .sort((a, b) => a.angle - b.angle);
-
-  //   console.log(buildingSegments);
-  // }
-
   const onSceneReady = React.useCallback<
     NonNullable<ReactSceneProps["onSceneReady"]>
   >(
-    (_canvas, scene, _engine, _camera) => {
+    (_canvas, scene, _engine, camera) => {
       const initPos = wgs84ToLV95(
         (maxLatitude + minLatitude) / 2,
         (maxLongitude + minLongitude) / 2
-        // ZOOM,
-        // xBounds,
-        // zBounds,
-        // rawXdelta,
-        // rawZdelta,
-        // rawXmin,
-        // rawZmax
       );
 
-      _camera.setPosition(new Vector3(initPos.E, 0, initPos.N));
-      _camera.setTarget(new Vector3(initPos.E, 0, initPos.N));
-      _camera.alpha = (Math.PI * 3) / 2;
-      // _camera.rotation = new Vector3(Math.PI, 0, 0);
+      getHeight(initPos.E, initPos.N).then((height) => {
+        camera.setPosition(new Vector3(initPos.E, height, initPos.N));
+        camera.setTarget(new Vector3(initPos.E, height, initPos.N));
+        camera.alpha = (Math.PI * 3) / 2;
+        camera.radius = 10;
+      });
 
-      debugBoundaries(
-        scene,
-        dataCoordinates,
-        { minLatitude, minLongitude, maxLatitude, maxLongitude }
-        // ZOOM,
-        // xBounds,
-        // zBounds,
-        // rawXdelta,
-        // rawZdelta,
-        // rawXmin,
-        // rawZmax
-      );
-
-      // Manage player position (Bad performance, should be done elsewhere )
-      scene.onPointerDown = function (event, pickResult) {
-        let vector: Vector3 = new Vector3();
-
-        if (pickResult.pickedPoint) {
-          //left mouse click
-          if (event.button == 0) {
-            vector = pickResult.pickedPoint;
-            console.log(
-              "left mouse click: " + vector.x + "," + vector.y + "," + vector.z
-            );
-            setPlayerPosition(new Vector3(vector.x, vector.y + 0.15, vector.z));
-          }
-          //right mouse click
-          if (event.button == 2 && vector) {
-            vector.x = pickResult.pickedPoint.x;
-            vector.y = pickResult.pickedPoint.y;
-            vector.z = pickResult.pickedPoint.z;
-            console.log(
-              "right mouse click: " + vector.x + "," + vector.y + "," + vector.z
-            );
-          }
-          //Wheel button or middle button on mouse click
-          if (event.button == 1) {
-            vector["x"] = pickResult.pickedPoint["x"];
-            vector["y"] = pickResult.pickedPoint["y"];
-            vector["z"] = pickResult.pickedPoint["z"];
-            console.log(
-              "middle mouse click: " +
-                vector.x +
-                "," +
-                vector.y +
-                "," +
-                vector.z
-            );
-          }
-        }
-      };
+      debugBoundaries(scene, dataCoordinates, {
+        minLatitude,
+        minLongitude,
+        maxLatitude,
+        maxLongitude,
+      });
     },
-    [dataCoordinates, rawXdelta, rawXmin, rawZdelta, rawZmax, xBounds, zBounds]
+    [dataCoordinates, maxLatitude, maxLongitude, minLatitude, minLongitude]
   );
 
   const onOSMGroundLoad = React.useCallback(
-    (ground: Mesh) => {
-      setRealXYValues("loading");
+    (ground: Mesh, tilesURL: string[]) => {
+      setExportValues({
+        trees: [],
+        buildings: [],
+        terrain: {
+          terrainVertices: "loading",
+          terrainUV: "loading",
+          tiles: "loading",
+        },
+      });
 
       const vertices = ground.getVerticesData(VertexBuffer.PositionKind);
+      const uv = ground.getVerticesData(VertexBuffer.UVKind);
+
+      if (uv != null) {
+        setExportValues((o) => ({
+          ...o,
+          terrain: { ...o.terrain, terrainUV: uv },
+        }));
+      }
 
       if (vertices) {
         const verices3D: number[][] = [];
@@ -303,42 +219,62 @@ export default function App() {
           return [E, N, pos[0], pos[2]];
         });
 
-        Promise.all(
-          positions.map((pos) =>
-            fetch(
-              `https://api3.geo.admin.ch/rest/services/height?easting=${pos[0]}&northing=${pos[1]}`
-            ).then((response) => response.json())
-          )
-        )
-          .then((data: { height: string }[]) =>
-            data.map((_d, i) => [
+        Promise.all(positions.map((pos) => getHeight(pos[0], pos[1])))
+          .then((data) =>
+            data.map((height, i) => [
               positions[i][0],
-              //Number(_d.height),
-              0,
+              height,
+              // 0,
               positions[i][1],
             ])
           )
           .then((data) => {
-            ground.setVerticesData(
-              VertexBuffer.PositionKind,
-              data.flatMap((d) => d)
-            );
+            const flatValues = data.flatMap((d) => d);
+            ground.setVerticesData(VertexBuffer.PositionKind, flatValues);
+            setExportValues((o) => ({
+              ...o,
+              terrain: { ...o.terrain, terrainVertices: flatValues },
+            }));
           })
           .catch((e) => {
-            console.log(e);
-            debugger;
+            // eslint-disable-next-line no-alert
+            alert(e);
+          });
+
+        Promise.all(
+          tilesURL.map((tileUrl) => fetch(tileUrl).then((res) => res.blob()))
+        )
+          .then((blobs) => {
+            setExportValues((o) => ({
+              ...o,
+              terrain: { ...o.terrain, tiles: blobs },
+            }));
+          })
+
+          .catch((e) => {
+            // eslint-disable-next-line no-alert
+            alert(e);
           });
       }
     },
     [rawXdelta, rawXmin, rawZdelta, rawZmax, xBounds, zBounds]
   );
 
-  const onRender = React.useCallback(() => {
-    // console.log("RERENDER");
-  }, []);
+  React.useEffect(() => {
+    setExportValues((o) => ({ ...o, buildings: buildingsData }));
+  }, [buildingsData]);
 
-  //https://playground.babylonjs.com/#95PXRY#240
+  React.useEffect(() => {
+    setExportValues((o) => ({ ...o, trees: treesData }));
+  }, [treesData]);
 
+  console.log(buildingsData[0]);
+  console.log(treesData[0]);
+
+  const exportReady =
+    Object.values(exportValues.terrain).filter(
+      (v) => v === null || v === "loading"
+    ).length === 0;
   return (
     <div
       className="App"
@@ -374,9 +310,9 @@ export default function App() {
           <p>max latitude</p>
           <input
             type="number"
-            value={dataCoordinates.maxLatitude}
+            value={currentCoordinates.maxLatitude}
             onChange={(e) =>
-              setDataCoordinates((o) => ({
+              setCurrentCoordinates((o) => ({
                 ...o,
                 maxLatitude: Number(e.target.value),
               }))
@@ -398,9 +334,9 @@ export default function App() {
           <p>min longitude</p>
           <input
             type="number"
-            value={dataCoordinates.minLongitude}
+            value={currentCoordinates.minLongitude}
             onChange={(e) =>
-              setDataCoordinates((o) => ({
+              setCurrentCoordinates((o) => ({
                 ...o,
                 minLongitude: Number(e.target.value),
               }))
@@ -422,9 +358,9 @@ export default function App() {
           <p>max longitude</p>
           <input
             type="number"
-            value={dataCoordinates.maxLongitude}
+            value={currentCoordinates.maxLongitude}
             onChange={(e) =>
-              setDataCoordinates((o) => ({
+              setCurrentCoordinates((o) => ({
                 ...o,
                 maxLongitude: Number(e.target.value),
               }))
@@ -446,9 +382,9 @@ export default function App() {
           <p>min latitude</p>
           <input
             type="number"
-            value={dataCoordinates.minLatitude}
+            value={currentCoordinates.minLatitude}
             onChange={(e) =>
-              setDataCoordinates((o) => ({
+              setCurrentCoordinates((o) => ({
                 ...o,
                 minLatitude: Number(e.target.value),
               }))
@@ -457,26 +393,84 @@ export default function App() {
         </div>
       </div>
 
+      <br />
       <button
         onClick={() => {
-          if (realXYValues != null && realXYValues !== "loading") {
-            const zip = new JSZip();
-            const data = zip.folder("data");
-            if (data != null) {
-              const terrainData = Buffer.from(
-                JSON.stringify(realXYValues)
+          setExportValues({
+            terrain: {
+              terrainUV: "loading",
+              terrainVertices: "loading",
+              tiles: "loading",
+            },
+            buildings: "loading",
+            trees: "loading",
+          });
+
+          setDataCoordinates(currentCoordinates);
+        }}
+      >
+        Gather data
+      </button>
+      <br />
+
+      <button
+        disabled={!exportReady}
+        onClick={() => {
+          const { terrainUV, terrainVertices, tiles } = exportValues.terrain;
+
+          const zip = new JSZip();
+          const terrain = zip.folder("terrain");
+
+          if (terrain != null) {
+            if (terrainVertices != null && terrainVertices !== "loading") {
+              const data = Buffer.from(
+                JSON.stringify(terrainVertices)
               ).toString("base64");
 
-              data.file("terrain.json", terrainData, { base64: true });
-              zip.generateAsync({ type: "blob" }).then(function (content) {
-                // see FileSaver.js
-                saveAs(content, "example.zip");
+              terrain.file("vertices.json", data, { base64: true });
+            }
+
+            if (terrainUV != null && terrainUV !== "loading") {
+              const data = Buffer.from(JSON.stringify(terrainUV)).toString(
+                "base64"
+              );
+
+              terrain.file("uv.json", data, { base64: true });
+            }
+
+            const tilesFolder = terrain.folder("tiles");
+
+            if (tilesFolder != null && tiles != null && tiles !== "loading") {
+              tiles.forEach((tile, i) => {
+                tilesFolder.file(`${i}.png`, tile, { base64: true });
               });
             }
           }
+
+          const buildings = zip.folder("buildings");
+          if (buildings != null) {
+            const data = Buffer.from(
+              JSON.stringify(exportValues.buildings)
+            ).toString("base64");
+
+            buildings.file("buildings.json", data, { base64: true });
+          }
+
+          const trees = zip.folder("trees");
+          if (trees != null) {
+            const data = Buffer.from(
+              JSON.stringify(exportValues.buildings)
+            ).toString("base64");
+
+            trees.file("trees.json", data, { base64: true });
+          }
+
+          zip.generateAsync({ type: "blob" }).then(function (content) {
+            saveAs(content, "data.zip");
+          });
         }}
       >
-        {realXYValues === "loading" ? "Loading..." : "Save data"}
+        {exportReady ? "Export values" : "Loading"}
       </button>
 
       <br />
@@ -491,13 +485,12 @@ export default function App() {
         containerProps={containerProps}
         onSceneReady={onSceneReady}
         canvasProps={canvasProps}
-        onRender={onRender}
+        // onRender={onRender}
       >
         {(_canvas, scene, _engine, _camera, _light) => (
           <>
             {/* <Player scene={scene} position={playerPosition} /> */}
             <OSMGround
-              // heights={heights}
               scene={scene}
               zoom={ZOOM}
               xmin={xmin}
@@ -516,69 +509,7 @@ export default function App() {
               playerPosition={playerPosition}
             /> */}
             <Buildings scene={scene} buildingsData={buildingsData} />
-            {/* {heights.map((height, _i, _heights) => (
-              <DebugSphere
-                key={JSON.stringify(height)}
-                scene={scene}
-                x={height.x}
-                y={height.y}
-                z={height.z}
-                // color={new Color3(i / heights.length, 0, 0)}
-              />
-            ))} */}
-            {/* {points.map((point, _i) => {
-              {
-                // console.log(point);
-                return (
-                  <DebugSphere
-                    key={JSON.stringify(point) + "yo"}
-                    scene={scene}
-                    x={point.x}
-                    y={point.y}
-                    // z={point._z}
-                    z={point.z}
-                    color={Color3.Red()}
-                  />
-                );
-              }
-            })} */}
-            {/* <Heightmap
-              scene={scene}
-              heights={heights}
-              zoom={zoom}
-              xFirstTile={rawXmin}
-              zLastTile={rawZmax}
-              subdivisions={groundSubdivisions}
-            /> */}
-            {/* <Trees scene={scene} treesData={treesData} /> */}
-            {/* <DebugSphere
-              scene={scene}
-              x={A.X}
-              z={A.Z}
-              color={new Color3(1, 0, 0)}
-            />
-            <DebugSphere
-              scene={scene}
-              x={B.X}
-              z={B.Z}
-              color={new Color3(0, 1, 0)}
-            />
-            <DebugSphere
-              scene={scene}
-              x={C.X}
-              z={C.Z}
-              color={new Color3(0, 0, 1)}
-            />
-            <DebugSphere
-              scene={scene}
-              x={D.X}
-              z={D.Z}
-              color={new Color3(1, 1, 0)}
-            />
-            <DebugSphere scene={scene} x={batA.X} z={batA.Z} />
-            <DebugSphere scene={scene} x={batB.X} z={batB.Z} />
-            <DebugSphere scene={scene} x={batC.X} z={batC.Z} />
-            <DebugSphere scene={scene} x={batD.X} z={batD.Z} /> */}
+            <Trees scene={scene} treesData={treesData} />
           </>
         )}
       </ReactScene>

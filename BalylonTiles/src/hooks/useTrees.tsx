@@ -1,6 +1,6 @@
 import { Vector2, Vector3 } from "@babylonjs/core";
 import * as React from "react";
-import { wgs84ToXY } from "../helpers/utils";
+import { getHeight, wgs84ToLV95, wgs84ToXY } from "../helpers/utils";
 
 const overpassURL = "https://overpass-api.de/api/interpreter";
 
@@ -70,15 +70,7 @@ export function useTrees(
   minLatitude: number,
   minLongitude: number,
   maxLatitude: number,
-  maxLongitude: number,
-  zoom: number,
-  xBounds: number,
-  zBounds: number,
-  xDelta: number,
-  zDelta: number,
-  xmin: number,
-  zmax: number,
-  defaultHeight: number = 1
+  maxLongitude: number
 ): Tree[] {
   const [trees, setTrees] = React.useState<Tree[]>([]);
 
@@ -100,22 +92,25 @@ export function useTrees(
           });
 
           const trees: Tree[] = Object.values(data.node).map((node) => {
-            const point = wgs84ToXY(
-              node.lat,
-              node.lon,
-              zoom,
-              xBounds,
-              zBounds,
-              xDelta,
-              zDelta,
-              xmin,
-              zmax
-            );
+            const point = wgs84ToLV95(node.lat, node.lon);
 
-            return { point: new Vector3(point.X, 0.58, point.Y) };
+            return { point: new Vector3(point.E, 0.58, point.N) };
           });
+
           if (mounted) {
-            setTrees(trees);
+            Promise.all(
+              trees.map(async (tree) => {
+                return {
+                  point: new Vector3(
+                    tree.point.x,
+                    await getHeight(tree.point.x, tree.point.z),
+                    tree.point.z
+                  ),
+                };
+              })
+            ).then((trees) => {
+              setTrees(trees);
+            });
           }
         });
       }
@@ -123,19 +118,6 @@ export function useTrees(
         mounted = false;
       };
     });
-  }, [
-    defaultHeight,
-    maxLatitude,
-    maxLongitude,
-    minLatitude,
-    minLongitude,
-    xBounds,
-    xDelta,
-    xmin,
-    zBounds,
-    zDelta,
-    zmax,
-    zoom,
-  ]);
+  }, [maxLatitude, maxLongitude, minLatitude, minLongitude]);
   return trees;
 }

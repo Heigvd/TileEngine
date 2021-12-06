@@ -1,6 +1,7 @@
 import { Vector2, Vector3 } from "@babylonjs/core";
+import { Vector } from "ink-geom2d";
 import * as React from "react";
-import { wgs84ToLV95, wgs84ToXY } from "../helpers/utils";
+import { getHeight, wgs84ToLV95, wgs84ToXY } from "../helpers/utils";
 
 const overpassURL = "https://overpass-api.de/api/interpreter";
 
@@ -27,7 +28,7 @@ interface OSMWay {
   type: "way";
   id: number;
   nodes: number[];
-  tags: { [key: string]: string };
+  tags?: { [key: string]: string };
 }
 
 interface OSMNode {
@@ -80,7 +81,6 @@ export function useBuildings(
     fetch(
       overpassQuery(minLatitude, minLongitude, maxLatitude, maxLongitude)
     ).then((res) => {
-      console.log("Getting buildings");
       if (res.statusText === "OK") {
         res.json().then((json: OverpassAnswer) => {
           const data: OSMData = { way: {}, node: {} };
@@ -109,15 +109,38 @@ export function useBuildings(
                   Math.min(maxLongitude, node.lon)
                 );
                 const point = wgs84ToLV95(computedLat, computedLon);
+
                 path.push(new Vector3(point.E, 0, point.N));
               }
             });
 
-            buildings.push({ height: defaultHeight, points: path });
+            const buildingHeight = way.tags && way.tags["height"];
+
+            buildings.push({
+              height:
+                buildingHeight != null ? Number(buildingHeight) : defaultHeight,
+              points: path,
+            });
           });
 
           if (mounted) {
-            setBuildings(buildings);
+            Promise.all(
+              buildings.map(async (building) => {
+                const points = await Promise.all(
+                  building.points.map(
+                    async (point) =>
+                      new Vector3(
+                        point.x,
+                        await getHeight(point.x, point.z),
+                        point.z
+                      )
+                  )
+                );
+                return { ...building, points };
+              })
+            ).then((buildings) => {
+              setBuildings(buildings);
+            });
           }
         });
       }
