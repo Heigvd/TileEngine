@@ -10,20 +10,19 @@ import {
 
 interface DebugSphere {
   x?: number;
+  y?: number;
   z?: number;
   scene: Scene;
   color?: Color3;
-  displayInput?: boolean;
 }
 
 export function DebugSphere({
   scene,
   x = 0,
+  y = 0,
   z = 0,
   color,
-  displayInput,
 }: DebugSphere) {
-  const [height, setHeight] = React.useState(0);
   const sphereRef = React.useRef<Mesh | undefined>();
 
   React.useLayoutEffect(() => {
@@ -38,9 +37,9 @@ export function DebugSphere({
 
   React.useEffect(() => {
     if (sphereRef.current != null) {
-      sphereRef.current.setAbsolutePosition(new Vector3(x, height, z));
+      sphereRef.current.setAbsolutePosition(new Vector3(x, y, z));
     }
-  }, [height, x, z]);
+  }, [y, x, z]);
 
   React.useEffect(() => {
     if (sphereRef.current != null && color != null) {
@@ -51,11 +50,5 @@ export function DebugSphere({
     }
   }, [color, scene]);
 
-  return displayInput ? (
-    <input
-      type="number"
-      value={height}
-      onChange={(e) => setHeight(Number(e.target.value))}
-    />
-  ) : null;
+  return null;
 }

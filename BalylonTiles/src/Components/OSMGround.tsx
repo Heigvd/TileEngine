@@ -9,6 +9,8 @@ import {
   TargetCamera,
   ActionManager,
   ExecuteCodeAction,
+  VertexBuffer,
+  MeshBuilder,
 } from "@babylonjs/core";
 import * as React from "react";
 
@@ -29,6 +31,7 @@ interface OSMGroundProps {
     w: number;
     h: number;
   };
+  onLoad: (tiledGround: Mesh) => void;
 }
 
 const defaultPrecision = { w: 2, h: 2 };
@@ -44,6 +47,7 @@ export function OSMGround({
   zLastTile,
   subdivisions,
   precision = defaultPrecision,
+  onLoad,
 }: OSMGroundProps) {
   React.useEffect(() => {
     console.log("RELOAD GROUND");
@@ -62,14 +66,9 @@ export function OSMGround({
     // );
 
     // Create the Tiled Ground
-    const tiledGround = Mesh.CreateTiledGround(
+    const tiledGround = MeshBuilder.CreateTiledGround(
       "Tiled Ground",
-      xmin,
-      zmin,
-      xmax,
-      zmax,
-      subdivisions,
-      precision,
+      { xmin, zmin, xmax, zmax, subdivisions, precision },
       scene
     );
 
@@ -96,7 +95,7 @@ export function OSMGround({
             "/" +
             (xFirstTile + col) +
             "/" +
-            (zLastTile - row) +
+            (zLastTile - row - 2) +
             ".png",
           scene
         );
@@ -139,6 +138,11 @@ export function OSMGround({
 
     tiledGround.isPickable = true;
 
+    onLoad(tiledGround);
+
+    // const blob = new Blob(["Welcome to Websparrow.org."],
+    //             { type: "text/plain;charset=utf-8" });
+
     // click action for player
     // tiledGround.actionManager = new ActionManager(scene);
     // tiledGround.actionManager.registerAction(
@@ -148,6 +152,7 @@ export function OSMGround({
     //   })
     // );
   }, [
+    onLoad,
     precision,
     scene,
     subdivisions,

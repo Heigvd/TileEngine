@@ -5,9 +5,14 @@ const appDirectory = fs.realpathSync(process.cwd());
 const webpack = require("webpack");
 
 module.exports = {
-  entry: path.resolve(appDirectory, "src/index.tsx"), //path to the main .ts file
+  entry: {
+    world: path.resolve(appDirectory, "src/entries/index.tsx"),
+    data: path.resolve(appDirectory, "src/entries/data.tsx"),
+  },
+
   output: {
-    filename: "js/bundleName.js", //name for the javascript file that is created/compiled in memory
+    // path: "./dist/js/",
+    // filename: "js/bundleName.js", //name for the javascript file that is created/compiled in memory
     clean: true,
   },
   resolve: {
@@ -18,8 +23,16 @@ module.exports = {
       earcut: "earcut",
     }),
     new HtmlWebpackPlugin({
-      inject: true,
+      filename: "index.html",
       template: path.resolve(appDirectory, "public/index.html"),
+      inject: true,
+      chunks: ["world"],
+    }),
+    new HtmlWebpackPlugin({
+      filename: "data/index.html",
+      template: path.resolve(appDirectory, "public/index.html"),
+      inject: true,
+      chunks: ["data"],
     }),
   ],
   module: {
