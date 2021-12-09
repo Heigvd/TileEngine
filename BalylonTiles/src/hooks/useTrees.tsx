@@ -66,58 +66,87 @@ export interface Tree {
   point: Vector3;
 }
 
+export function getTrees(
+  minLatitude: number,
+  minLongitude: number,
+  maxLatitude: number,
+  maxLongitude: number,
+  offsetX: number,
+  offsetY: number
+): Promise<Tree[]> {
+  return fetch(
+    overpassQuery(minLatitude, minLongitude, maxLatitude, maxLongitude)
+  ).then((res) => {
+    console.log("Getting trees");
+    if (res.statusText === "OK") {
+      return res.json().then((json: OverpassAnswer) => {
+        const data: OSMData = { way: {}, node: {} };
+        json.elements.forEach((element) => {
+          if (element.type === "node" || element.type === "way") {
+            data[element.type][element.id] = element;
+          } else {
+            console.log("Unused type : " + element.type);
+          }
+        });
+
+        const trees: Tree[] = Object.values(data.node).map((node) => {
+          const point = wgs84ToLV95(node.lat, node.lon);
+
+          return {
+            point: new Vector3(point.E, 0.58, point.N),
+          };
+        });
+
+        const asyncTrees: Promise<Tree[]> = Promise.all(
+          trees.map(async (tree) => {
+            return {
+              point: new Vector3(
+                tree.point.x - offsetX,
+                await getHeight(tree.point.x, tree.point.z),
+                tree.point.z - offsetY
+              ),
+            };
+          })
+        ).then((trees) => {
+          return trees;
+        });
+
+        return asyncTrees;
+      });
+    } else {
+      throw Error(res.statusText);
+    }
+  });
+}
+
 export function useTrees(
   minLatitude: number,
   minLongitude: number,
   maxLatitude: number,
-  maxLongitude: number
+  maxLongitude: number,
+  offsetX: number,
+  offsetY: number
 ): Tree[] {
   const [trees, setTrees] = React.useState<Tree[]>([]);
 
   React.useEffect(() => {
     let mounted = true;
-    fetch(
-      overpassQuery(minLatitude, minLongitude, maxLatitude, maxLongitude)
-    ).then((res) => {
-      console.log("Getting trees");
-      if (res.statusText === "OK") {
-        res.json().then((json: OverpassAnswer) => {
-          const data: OSMData = { way: {}, node: {} };
-          json.elements.forEach((element) => {
-            if (element.type === "node" || element.type === "way") {
-              data[element.type][element.id] = element;
-            } else {
-              console.log("Unused type : " + element.type);
-            }
-          });
-
-          const trees: Tree[] = Object.values(data.node).map((node) => {
-            const point = wgs84ToLV95(node.lat, node.lon);
-
-            return { point: new Vector3(point.E, 0.58, point.N) };
-          });
-
-          if (mounted) {
-            Promise.all(
-              trees.map(async (tree) => {
-                return {
-                  point: new Vector3(
-                    tree.point.x,
-                    await getHeight(tree.point.x, tree.point.z),
-                    tree.point.z
-                  ),
-                };
-              })
-            ).then((trees) => {
-              setTrees(trees);
-            });
-          }
-        });
+    getTrees(
+      minLatitude,
+      minLongitude,
+      maxLatitude,
+      maxLongitude,
+      offsetX,
+      offsetY
+    ).then((trees) => {
+      if (mounted) {
+        setTrees(trees);
       }
-      return () => {
-        mounted = false;
-      };
     });
-  }, [maxLatitude, maxLongitude, minLatitude, minLongitude]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [maxLatitude, maxLongitude, minLatitude, minLongitude, offsetX, offsetY]);
   return trees;
 }

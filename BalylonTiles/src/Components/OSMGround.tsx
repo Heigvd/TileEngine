@@ -31,10 +31,10 @@ interface OSMGroundProps {
     w: number;
     h: number;
   };
-  onLoad: (tiledGround: Mesh, tilesURL: string[]) => void;
+  onLoad?: (tiledGround: Mesh, tilesURL: string[]) => void;
 }
 
-const defaultPrecision = { w: 2, h: 2 };
+export const defaultPrecision = { w: 2, h: 2 };
 
 export function OSMGround({
   scene,
@@ -103,7 +103,8 @@ export function OSMGround({
         material.diffuseTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
         material.diffuseTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
         material.specularColor = new Color3(0, 0, 0);
-        material.backFaceCulling = false;
+        //material.backFaceCulling = false;
+
         // Carefull with this one, avoid flickering but cause the sprite to be redered behind
         // material.useLogarithmicDepth = true;
         multimat.subMaterials.push(material);
@@ -141,7 +142,7 @@ export function OSMGround({
 
     tiledGround.isPickable = true;
 
-    onLoad(tiledGround, tilesURL);
+    onLoad && onLoad(tiledGround, tilesURL);
 
     // const blob = new Blob(["Welcome to Websparrow.org."],
     //             { type: "text/plain;charset=utf-8" });

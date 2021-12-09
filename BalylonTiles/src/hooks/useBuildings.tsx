@@ -67,87 +67,122 @@ export interface Building {
   points: Vector3[];
 }
 
+export function getBuildings(
+  minLatitude: number,
+  minLongitude: number,
+  maxLatitude: number,
+  maxLongitude: number,
+  offsetX: number,
+  offsetY: number,
+  defaultHeight: number = 10
+): Promise<Building[]> {
+  return fetch(
+    overpassQuery(minLatitude, minLongitude, maxLatitude, maxLongitude)
+  ).then((res) => {
+    if (res.statusText === "OK") {
+      return res.json().then((json: OverpassAnswer) => {
+        const data: OSMData = { way: {}, node: {} };
+        json.elements.forEach((element) => {
+          if (element.type === "node" || element.type === "way") {
+            data[element.type][element.id] = element;
+          } else {
+            console.log("Unused type : " + element.type);
+          }
+        });
+
+        const asyncBuildings: Promise<Building>[] = Object.values(data.way).map(
+          (way) => {
+            const path = way.nodes
+              .map(async (nodeId) => {
+                const node = data.node[nodeId];
+                if (node != null) {
+                  // Cutting building when crossing bounds
+                  const computedLat = Math.max(
+                    minLatitude,
+                    Math.min(maxLatitude, node.lat)
+                  );
+                  const computedLon = Math.max(
+                    minLongitude,
+                    Math.min(maxLongitude, node.lon)
+                  );
+
+                  const point = wgs84ToLV95(computedLat, computedLon);
+                  return new Vector3(
+                    point.E - offsetX,
+                    await getHeight(point.E, point.N),
+                    point.N - offsetY
+                  );
+                }
+              })
+              .filter(function (point): point is Promise<Vector3> {
+                return point != null;
+              });
+
+            const buildingHeight = way.tags && way.tags["height"];
+
+            const asyncBuilding: Promise<Building> = Promise.all(path).then(
+              (path) => {
+                return {
+                  height:
+                    buildingHeight != null
+                      ? Number(buildingHeight)
+                      : defaultHeight,
+                  points: path,
+                };
+              }
+            );
+            return asyncBuilding;
+          }
+        );
+        return Promise.all(asyncBuildings).then((buildings) => {
+          return buildings;
+        });
+      });
+    } else {
+      throw Error(res.statusText);
+    }
+  });
+}
+
 export function useBuildings(
   minLatitude: number,
   minLongitude: number,
   maxLatitude: number,
   maxLongitude: number,
+  offsetX: number,
+  offsetY: number,
   defaultHeight: number = 10
 ): Building[] {
   const [buildings, setBuildings] = React.useState<Building[]>([]);
 
   React.useEffect(() => {
     let mounted = true;
-    fetch(
-      overpassQuery(minLatitude, minLongitude, maxLatitude, maxLongitude)
-    ).then((res) => {
-      if (res.statusText === "OK") {
-        res.json().then((json: OverpassAnswer) => {
-          const data: OSMData = { way: {}, node: {} };
-          json.elements.forEach((element) => {
-            if (element.type === "node" || element.type === "way") {
-              data[element.type][element.id] = element;
-            } else {
-              console.log("Unused type : " + element.type);
-            }
-          });
 
-          const buildings: Building[] = [];
-
-          Object.values(data.way).forEach((way) => {
-            const path: Vector3[] = [];
-
-            way.nodes.forEach((nodeId) => {
-              const node = data.node[nodeId];
-              if (node != null) {
-                const computedLat = Math.max(
-                  minLatitude,
-                  Math.min(maxLatitude, node.lat)
-                );
-                const computedLon = Math.max(
-                  minLongitude,
-                  Math.min(maxLongitude, node.lon)
-                );
-                const point = wgs84ToLV95(computedLat, computedLon);
-
-                path.push(new Vector3(point.E, 0, point.N));
-              }
-            });
-
-            const buildingHeight = way.tags && way.tags["height"];
-
-            buildings.push({
-              height:
-                buildingHeight != null ? Number(buildingHeight) : defaultHeight,
-              points: path,
-            });
-          });
-
-          if (mounted) {
-            Promise.all(
-              buildings.map(async (building) => {
-                const points = await Promise.all(
-                  building.points.map(
-                    async (point) =>
-                      new Vector3(
-                        point.x,
-                        await getHeight(point.x, point.z),
-                        point.z
-                      )
-                  )
-                );
-                return { ...building, points };
-              })
-            ).then((buildings) => {
-              setBuildings(buildings);
-            });
-          }
-        });
+    getBuildings(
+      minLatitude,
+      minLongitude,
+      maxLatitude,
+      maxLongitude,
+      offsetX,
+      offsetY,
+      defaultHeight
+    ).then((buildings) => {
+      if (mounted) {
+        setBuildings(buildings);
       }
-      return () => {
-        mounted = false;
-      };
     });
-  }, [defaultHeight, maxLatitude, maxLongitude, minLatitude, minLongitude]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    defaultHeight,
+    maxLatitude,
+    maxLongitude,
+    minLatitude,
+    minLongitude,
+    offsetX,
+    offsetY,
+  ]);
   return buildings;
 }

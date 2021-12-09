@@ -16,8 +16,15 @@ interface BuildingsProps {
 }
 
 export function Buildings({ scene, buildingsData }: BuildingsProps) {
+  const buildings = React.useRef<Mesh[]>([]);
+
   React.useEffect(() => {
     console.log("Getting buildings");
+
+    buildings.current.forEach((building) => {
+      building.dispose();
+    });
+
     const material = new StandardMaterial("buildingColor", scene);
     material.diffuseColor = Color3.Gray();
     // material.alpha = 0.9;
@@ -41,8 +48,10 @@ export function Buildings({ scene, buildingsData }: BuildingsProps) {
       );
 
       // Avoiding
-      material.useLogarithmicDepth = true;
+      //material.useLogarithmicDepth = true;
       building.material = material;
+
+      buildings.current.push(building);
 
       ///////////////////////////////////////////////
       // TEST : click action for building

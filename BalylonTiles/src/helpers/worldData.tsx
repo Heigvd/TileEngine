@@ -1,6 +1,6 @@
 import * as React from "react";
 import { DataCoordinates } from "../DataApp";
-import { latLon2pixel, tileToLonLat } from "./utils";
+import { latLon2pixel, tileToLonLat, wgs84ToLV95 } from "./utils";
 
 export function worldData(
   dataCoordinates: DataCoordinates,
@@ -53,6 +53,7 @@ export function worldData(
     h: rawZdelta,
     w: rawXdelta,
   };
+
   return {
     minLatitude,
     minLongitude,

@@ -9,6 +9,7 @@ import {
   SceneOptions,
   Vector3,
 } from "@babylonjs/core";
+import { createScene } from "../helpers/babylonHelpers";
 
 export interface SceneComponentProps {
   antialias?: boolean;
@@ -56,13 +57,13 @@ export function SceneComponent({
 
     const canvas = reactCanvas.current;
     if (canvas) {
-      const engine = new Engine(
+      const { engine, scene } = createScene(
         canvas,
         antialias,
         engineOptions,
-        adaptToDeviceRatio
+        adaptToDeviceRatio,
+        sceneOptions
       );
-      const scene = new Scene(engine, sceneOptions);
 
       // Create a rotating camera
       const camera = new ArcRotateCamera(
