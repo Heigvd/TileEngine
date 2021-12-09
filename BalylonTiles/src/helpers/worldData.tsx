@@ -2,11 +2,7 @@ import * as React from "react";
 import { DataCoordinates } from "../DataApp";
 import { latLon2pixel, tileToLonLat, wgs84ToLV95 } from "./utils";
 
-export function worldData(
-  dataCoordinates: DataCoordinates,
-  zoom: number,
-  terrainWidth: number
-) {
+export function worldData(dataCoordinates: DataCoordinates, zoom: number) {
   const minTile = latLon2pixel(
     dataCoordinates.minLatitude,
     dataCoordinates.minLongitude,
@@ -39,15 +35,12 @@ export function worldData(
   const rawZmax = Math.max(tileZmin, tileZmax);
   const rawXdelta = rawXmax - rawXmin;
   const rawZdelta = rawZmax - rawZmin;
-  const zxRatio = rawZdelta / rawXdelta;
 
-  const xBounds = terrainWidth;
-  const zBounds = terrainWidth * zxRatio;
+  const { E: xmin, N: zmin } = wgs84ToLV95(minLatitude, minLongitude);
+  const { E: xmax, N: zmax } = wgs84ToLV95(maxLatitude, maxLongitude);
 
-  const xmin = -xBounds / 2;
-  const xmax = xBounds / 2;
-  const zmin = -zBounds / 2;
-  const zmax = zBounds / 2;
+  const offsetX = (xmax + xmin) / 2;
+  const offsetZ = (zmax + zmin) / 2;
 
   const groundSubdivisions = {
     h: rawZdelta,
@@ -59,16 +52,14 @@ export function worldData(
     minLongitude,
     maxLatitude,
     maxLongitude,
-    xBounds,
-    zBounds,
-    rawXdelta,
-    rawZdelta,
     rawXmin,
     rawZmax,
     xmin,
-    xmax,
     zmin,
+    xmax,
     zmax,
+    offsetX,
+    offsetZ,
     groundSubdivisions,
   };
 }

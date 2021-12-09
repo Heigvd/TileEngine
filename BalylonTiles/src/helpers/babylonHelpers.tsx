@@ -9,8 +9,8 @@ import {
   SubMesh,
   VertexBuffer,
 } from "@babylonjs/core";
-import { ZOOM } from "../config";
-import { xyToWGS84, wgs84ToLV95, getHeight } from "./utils";
+import { defaultPrecision } from "../Components/OSMGround";
+import { getHeight } from "./utils";
 
 export function createScene(
   canvas: Nullable<HTMLCanvasElement | WebGLRenderingContext>,
@@ -39,7 +39,7 @@ export function createTiledGround(
   zoom: number,
   xStartTile: number,
   yStartTile: number,
-  precision?: { h: number; w: number }
+  precision: { h: number; w: number } = defaultPrecision
 ) {
   const tiledGround = MeshBuilder.CreateTiledGround(
     "Tiled Ground",
@@ -89,53 +89,29 @@ export function createTiledGround(
       tilesURL.push(tileURL);
     }
   }
+
   return { tiledGround, tilesURL };
 }
 
 export function getGroundHeights(
   ground: Mesh,
-  xBounds: number,
-  zBounds: number,
-  rawXdelta: number,
-  rawZdelta: number,
-  rawXmin: number,
-  rawZmax: number,
   offsetX: number,
   offsetY: number
-) {
+): Promise<number[]> {
   const vertices = ground.getVerticesData(VertexBuffer.PositionKind);
 
   if (vertices) {
-    const verices3D: number[][] = [];
+    const positions: number[][] = [];
 
     for (let i = 0; i < vertices.length / 3; i++) {
-      verices3D.push([vertices[i * 3], Math.random(), vertices[i * 3 + 2]]);
+      positions.push([vertices[i * 3], vertices[i * 3 + 2]]);
     }
-
-    const positions = verices3D.map((pos) => {
-      const { latitude, longitude } = xyToWGS84(
-        pos[0],
-        pos[2],
-        ZOOM,
-        xBounds,
-        zBounds,
-        rawXdelta,
-        rawZdelta,
-        rawXmin,
-        rawZmax
-      );
-
-      const { E, N } = wgs84ToLV95(latitude, longitude);
-
-      return [E, N, pos[0], pos[2]];
-    });
 
     return Promise.all(positions.map((pos) => getHeight(pos[0], pos[1])))
       .then((data) =>
         data.map((height, i) => [
           positions[i][0] - offsetX,
           height,
-          // 0,
           positions[i][1] - offsetY,
         ])
       )
@@ -146,7 +122,7 @@ export function getGroundHeights(
         throw e;
       });
   } else {
-    return [];
+    return new Promise(() => []);
   }
 }
 

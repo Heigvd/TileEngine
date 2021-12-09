@@ -79,7 +79,8 @@ export function SceneComponent({
       camera.attachControl(canvas, true);
 
       // Add a light
-      const light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
+      const light = new HemisphericLight("hemi", new Vector3(0, 1, 1), scene);
+      light.setEnabled(false);
 
       if (scene.isReady()) {
         onSceneReady && onSceneReady(canvas, scene, engine, camera, light);

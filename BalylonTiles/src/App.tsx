@@ -17,7 +17,6 @@ import {
   // wgs84ToLV95Proj,
 } from "./helpers/utils";
 import { useBuildings } from "./hooks/useBuildings";
-import { Buffer } from "buffer";
 import { OSMGround } from "./Components/OSMGround";
 import { ReactSceneProps, ReactScene } from "./Components/ReactScene";
 import { useHeights } from "./hooks/useHeights";
@@ -744,10 +743,10 @@ export default function App() {
         canvasProps={canvasProps}
         onRender={onRender}
       >
-        {(_canvas, scene, _engine, _camera, _light) => (
+        {(_canvas, _scene, _engine, _camera, _light) => (
           <>
             {/* <Player scene={scene} position={playerPosition} /> */}
-            <OSMGround
+            {/* <OSMGround
               // heights={heights}
               scene={scene}
               zoom={zoom}
@@ -759,7 +758,7 @@ export default function App() {
               zLastTile={rawZmax}
               subdivisions={groundSubdivisions}
               onLoad={onOSMGroundLoad}
-            />
+            /> */}
 
             {/* <Vision
               scene={scene}

@@ -6,23 +6,27 @@ import {
   Texture,
   SubMesh,
   Scene,
-  TargetCamera,
-  ActionManager,
-  ExecuteCodeAction,
-  VertexBuffer,
   MeshBuilder,
+  FloatArray,
+  IndicesArray,
+  VertexBuffer,
+  Vector3,
 } from "@babylonjs/core";
+
 import * as React from "react";
+
+export interface Terrain {
+  positions: number[];
+  tiles: Blob[];
+}
 
 interface OSMGroundProps {
   scene: Scene;
-  zoom: number;
   xmin: number;
   xmax: number;
   zmin: number;
   zmax: number;
-  xFirstTile: number;
-  zLastTile: number;
+  terrainData: Terrain;
   subdivisions: {
     w: number;
     h: number;
@@ -31,20 +35,18 @@ interface OSMGroundProps {
     w: number;
     h: number;
   };
-  onLoad?: (tiledGround: Mesh, tilesURL: string[]) => void;
+  onLoad?: (tiledGround: Mesh) => void;
 }
 
 export const defaultPrecision = { w: 2, h: 2 };
 
 export function OSMGround({
   scene,
-  zoom,
   xmin,
   xmax,
   zmin,
   zmax,
-  xFirstTile,
-  zLastTile,
+  terrainData,
   subdivisions,
   precision = defaultPrecision,
   onLoad,
@@ -52,37 +54,13 @@ export function OSMGround({
   React.useEffect(() => {
     console.log("RELOAD GROUND");
 
-    // OSM doesn't have heightmap so if we want it we should try with another dataset
-    // https://opendem.info/
-    // const heightmapGround = Mesh.CreateGroundFromHeightMap(
-    //   "Heightmap Ground",
-    //   "heightmapURL",
-    //   xmax - xmin,
-    //   zmax - zmin,
-    //   10,
-    //   0,
-    //   100,
-    //   scene
-    // );
-
     // Create the Tiled Ground
     const tiledGround = MeshBuilder.CreateTiledGround(
       "Tiled Ground",
       { xmin, zmin, xmax, zmax, subdivisions, precision },
       scene
     );
-
     // Part 2 : Create the multi material
-    // Create differents materials
-    const whiteMaterial = new StandardMaterial("White", scene);
-    whiteMaterial.diffuseColor = new Color3(1, 1, 1);
-
-    const blackMaterial = new StandardMaterial("Black", scene);
-    blackMaterial.diffuseColor = new Color3(0, 0, 0);
-
-    const tilesURL: string[] = [];
-
-    // Create Multi Material
     const multimat = new MultiMaterial("multi", scene);
     for (let row = 0; row < subdivisions.h; row++) {
       for (let col = 0; col < subdivisions.w; col++) {
@@ -90,16 +68,10 @@ export function OSMGround({
           "material" + row + "-" + col,
           scene
         );
-        const tileURL =
-          "https://a.tile.openstreetmap.fr/osmfr/" +
-          zoom +
-          "/" +
-          (xFirstTile + col) +
-          "/" +
-          (zLastTile - row - 2) +
-          ".png";
-        tilesURL.push(tileURL);
-        material.diffuseTexture = new Texture(tileURL, scene);
+        const blobURL = URL.createObjectURL(
+          terrainData.tiles[row * subdivisions.w + col]
+        );
+        material.diffuseTexture = new Texture(blobURL, scene);
         material.diffuseTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
         material.diffuseTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
         material.specularColor = new Color3(0, 0, 0);
@@ -112,7 +84,6 @@ export function OSMGround({
     }
 
     // Part 3 : Apply the multi material
-    // Define multimat as material of the tiled ground
     tiledGround.material = multimat;
 
     // Needed constiables to set subMeshes
@@ -141,32 +112,45 @@ export function OSMGround({
     }
 
     tiledGround.isPickable = true;
+    tiledGround.receiveShadows = true;
 
-    onLoad && onLoad(tiledGround, tilesURL);
+    tiledGround.setVerticesData(
+      VertexBuffer.PositionKind,
+      terrainData.positions
+    );
 
-    // const blob = new Blob(["Welcome to Websparrow.org."],
-    //             { type: "text/plain;charset=utf-8" });
-
-    // click action for player
-    // tiledGround.actionManager = new ActionManager(scene);
-    // tiledGround.actionManager.registerAction(
-    //   new ExecuteCodeAction(ActionManager.OnPickUpTrigger, function (event) {
-    //     console.log("CLICKED", event);
-    //     alert("ground clicked");
-    //   })
+    // const positions: Vector3[] = [];
+    // for (let i = 0; i < terrainData.positions.length / 3; ++i) {
+    //   positions.push(
+    //     new Vector3(
+    //       terrainData.positions[i * 3],
+    //       terrainData.positions[i * 3 + 1],
+    //       terrainData.positions[i * 3 + 2]
+    //     )
+    //   );
+    // }
+    // const building = MeshBuilder.ExtrudePolygon(
+    //   "building",
+    //   {
+    //     shape: positions,
+    //     depth: 400,
+    //     sideOrientation: Mesh.DOUBLESIDE,
+    //   },
+    //   scene
     // );
+
+    onLoad && onLoad(tiledGround);
   }, [
     onLoad,
     precision,
     scene,
     subdivisions,
-    xFirstTile,
+    terrainData.positions,
+    terrainData.tiles,
     xmax,
     xmin,
-    zLastTile,
     zmax,
     zmin,
-    zoom,
   ]);
 
   return null;

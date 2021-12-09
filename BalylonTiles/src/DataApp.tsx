@@ -1,39 +1,21 @@
 import {
   Vector3,
-  MeshBuilder,
   Color3,
-  Scene,
   Mesh,
   VertexBuffer,
-  FloatArray,
-  DirectionalLight,
-  ShadowGenerator,
   PointLight,
   StandardMaterial,
-  MultiMaterial,
-  SubMesh,
-  ArcRotateCamera,
 } from "@babylonjs/core";
 import * as React from "react";
-import {
-  latLon2pixel,
-  testCoordinateTranslation,
-  tileToLonLat,
-  wgs84ToXY,
-  wgs84ToLV95,
-  xyToWGS84,
-  getHeight,
-  // wgs84ToLV95Proj,
-} from "./helpers/utils";
-import { Building, getBuildings, useBuildings } from "./hooks/useBuildings";
+import { wgs84ToLV95, getHeight } from "./helpers/utils";
+import { Building, getBuildings } from "./hooks/useBuildings";
 import { Buffer } from "buffer";
-import { defaultPrecision, OSMGround } from "./Components/OSMGround2";
+import { OSMGround, Terrain } from "./Components/OSMGround";
 import { ReactSceneProps, ReactScene } from "./Components/ReactScene";
-import { useHeights } from "./hooks/useHeights";
-import { getTrees, Tree, useTrees } from "./hooks/useTrees";
+import { getTrees, Tree } from "./hooks/useTrees";
 import { debugBoundaries } from "./helpers/debugging";
 import { worldData } from "./helpers/worldData";
-import { TERRAIN_WIDTH, ZOOM } from "./config";
+import { ZOOM } from "./config";
 import JSZip from "jszip";
 import saveAs from "file-saver";
 import { Buildings } from "./Components/Buildings";
@@ -44,7 +26,6 @@ import {
   getGroundHeights,
   getTiles,
 } from "./helpers/babylonHelpers";
-import { Terrain, TiledGround } from "./Components/TiledGround2";
 
 export interface DataCoordinates {
   minLongitude: number;
@@ -74,6 +55,7 @@ interface ExportedValues {
 
 export default function App() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const [generating, setGenerating] = React.useState(false);
   const [exporting, setExporting] = React.useState(false);
   const [displayScene, setDisplayScene] = React.useState(false);
   const [exportedValues, setExportedValues] = React.useState<ExportedValues>();
@@ -81,12 +63,12 @@ export default function App() {
   const [currentCoordinates, setCurrentCoordinates] =
     React.useState<DataCoordinates>(
       //HEIG-VD
-      {
-        minLongitude: 6.643,
-        maxLongitude: 6.654,
-        minLatitude: 46.777,
-        maxLatitude: 46.784,
-      }
+      // {
+      //   minLongitude: 6.643,
+      //   maxLongitude: 6.654,
+      //   minLatitude: 46.777,
+      //   maxLatitude: 46.784,
+      // }
       // ZERMATT
       // {
       //   minLongitude: 7.72,
@@ -108,45 +90,31 @@ export default function App() {
       //   minLatitude: 46.9247,
       //   maxLatitude: 46.9437,
       // }
+      //CREUX-DU-VAN (mini)
+      {
+        minLongitude: 6.72,
+        maxLongitude: 6.74,
+        minLatitude: 46.93,
+        maxLatitude: 46.94,
+      }
     );
 
   const [dataCoordinates, setDataCoordinates] =
     React.useState<DataCoordinates>(currentCoordinates);
-
-  ///////////////////////////// OFFSETS
-  const { E: minE, N: minN } = wgs84ToLV95(
-    dataCoordinates.minLatitude,
-    dataCoordinates.minLongitude
-  );
-  const { E: maxE, N: maxN } = wgs84ToLV95(
-    dataCoordinates.maxLatitude,
-    dataCoordinates.maxLongitude
-  );
-
-  const offsetX = (maxE + minE) / 2;
-  const offsetY = (maxN + minN) / 2;
-  ///////////////////////////// OFFSETS
 
   const {
     minLatitude,
     minLongitude,
     maxLatitude,
     maxLongitude,
-    xBounds,
-    zBounds,
-    rawXdelta,
-    rawZdelta,
-    rawXmin,
-    rawZmax,
     xmin,
     xmax,
     zmin,
     zmax,
+    offsetX,
+    offsetZ,
     groundSubdivisions,
-  } = React.useMemo(
-    () => worldData(dataCoordinates, ZOOM, TERRAIN_WIDTH),
-    [dataCoordinates]
-  );
+  } = React.useMemo(() => worldData(dataCoordinates, ZOOM), [dataCoordinates]);
 
   const onSceneReady = React.useCallback<
     NonNullable<ReactSceneProps["onSceneReady"]>
@@ -160,14 +128,12 @@ export default function App() {
       getHeight(initPos.E, initPos.N).then((height) => {
         camera.position.x += initPos.E - offsetX;
         camera.position.y += height;
-        camera.position.z += initPos.N - offsetY;
+        camera.position.z += initPos.N - offsetZ;
 
         camera.target.x += initPos.E - offsetX;
         camera.target.y += height;
-        camera.target.z += initPos.N - offsetY;
+        camera.target.z += initPos.N - offsetZ;
 
-        // camera.setPosition(new Vector3(initPos.E, height, initPos.N));
-        // camera.setTarget(new Vector3(initPos.E, height, initPos.N));
         camera.alpha = (Math.PI * 3) / 2;
         camera.radius = 10;
 
@@ -209,12 +175,13 @@ export default function App() {
       minLatitude,
       minLongitude,
       offsetX,
-      offsetY,
+      offsetZ,
     ]
   );
 
-  const onExportValues = React.useCallback(() => {
-    setExporting(true);
+  const onGenerateValues = React.useCallback(() => {
+    setExporting(false);
+    setGenerating(true);
     setExportedValues(undefined);
     const canvas = canvasRef.current;
     if (canvas) {
@@ -223,10 +190,6 @@ export default function App() {
         minLongitude,
         maxLatitude,
         maxLongitude,
-        xBounds,
-        zBounds,
-        rawXdelta,
-        rawZdelta,
         rawXmin,
         rawZmax,
         xmin,
@@ -234,15 +197,15 @@ export default function App() {
         zmin,
         zmax,
         groundSubdivisions,
-      } = worldData(dataCoordinates, ZOOM, TERRAIN_WIDTH);
+      } = worldData(dataCoordinates, ZOOM);
 
       const { scene } = createScene(canvas, false, {}, false, {});
 
       const { tiledGround, tilesURL } = createTiledGround(
         scene,
         xmin,
-        xmax,
         zmin,
+        xmax,
         zmax,
         groundSubdivisions,
         ZOOM,
@@ -250,20 +213,8 @@ export default function App() {
         rawZmax
       );
 
-      const terrainUV = tiledGround.getVerticesData(VertexBuffer.UVKind);
-
       Promise.all([
-        getGroundHeights(
-          tiledGround,
-          xBounds,
-          zBounds,
-          rawXdelta,
-          rawZdelta,
-          rawXmin,
-          rawZmax,
-          offsetX,
-          offsetY
-        ),
+        getGroundHeights(tiledGround, offsetX, offsetZ),
         getTiles(tilesURL),
         getBuildings(
           minLatitude,
@@ -271,7 +222,7 @@ export default function App() {
           maxLatitude,
           maxLongitude,
           offsetX,
-          offsetY
+          offsetZ
         ),
         getTrees(
           minLatitude,
@@ -279,133 +230,86 @@ export default function App() {
           maxLatitude,
           maxLongitude,
           offsetX,
-          offsetY
+          offsetZ
         ),
       ])
         .then(([terrainVertices, tiles, buildingsData, treesData]) => {
-          const zip = new JSZip();
-          const terrain = zip.folder("terrain");
-
-          if (terrain != null) {
-            if (terrainVertices != null) {
-              const data = Buffer.from(
-                JSON.stringify(terrainVertices)
-              ).toString("base64");
-
-              terrain.file("vertices.json", data, { base64: true });
-            }
-
-            if (terrainUV != null) {
-              const data = Buffer.from(JSON.stringify(terrainUV)).toString(
-                "base64"
-              );
-
-              terrain.file("uv.json", data, { base64: true });
-            }
-
-            const tilesFolder = terrain.folder("tiles");
-
-            if (tilesFolder != null) {
-              tiles.forEach((tile, i) => {
-                tilesFolder.file(`${i}.png`, tile, { base64: true });
-              });
-            }
-          }
-
-          const buildings = zip.folder("buildings");
-          if (buildings != null) {
-            const data = Buffer.from(JSON.stringify(buildingsData)).toString(
-              "base64"
-            );
-
-            buildings.file("buildings.json", data, { base64: true });
-          }
-
-          const trees = zip.folder("trees");
-          if (trees != null) {
-            const data = Buffer.from(JSON.stringify(treesData)).toString(
-              "base64"
-            );
-
-            trees.file("trees.json", data, { base64: true });
-          }
-
-          zip.generateAsync({ type: "blob" }).then(function (content) {
-            saveAs(content, "data.zip");
+          setExportedValues({
+            trees: treesData,
+            buildings: buildingsData,
+            terrain: {
+              positions: terrainVertices,
+              tiles,
+            },
           });
-
-          if (terrainUV != null) {
-            setExportedValues({
-              trees: treesData,
-              buildings: buildingsData,
-              terrain: {
-                terrainUV,
-                terrainVertices,
-                tiles,
-              },
-            });
-          }
         })
         .catch((e) => {
           console.log(e);
-          debugger;
         })
         .finally(() => {
-          setExporting(false);
+          setGenerating(false);
         });
     }
-  }, [dataCoordinates, offsetX, offsetY]);
+  }, [dataCoordinates, offsetX, offsetZ]);
 
-  const onOSMGroundLoad = React.useCallback(
-    (ground: Mesh) => {
-      const vertices = ground.getVerticesData(VertexBuffer.PositionKind);
+  const onExportValues = React.useCallback(() => {
+    setExporting(true);
 
-      if (vertices) {
-        const verices3D: number[][] = [];
+    if (exportedValues != null) {
+      const {
+        buildings: buildingsData,
+        terrain: terrainData,
+        trees: treesData,
+      } = exportedValues;
+      const { positions: terrainVertices, tiles } = terrainData;
+      const zip = new JSZip();
+      const terrain = zip.folder("terrain");
 
-        for (let i = 0; i < vertices.length / 3; i++) {
-          verices3D.push([vertices[i * 3], Math.random(), vertices[i * 3 + 2]]);
-        }
-
-        const positions = verices3D.map((pos) => {
-          const { latitude, longitude } = xyToWGS84(
-            pos[0],
-            pos[2],
-            ZOOM,
-            xBounds,
-            zBounds,
-            rawXdelta,
-            rawZdelta,
-            rawXmin,
-            rawZmax
+      if (terrain != null) {
+        if (terrainVertices != null) {
+          const data = Buffer.from(JSON.stringify(terrainVertices)).toString(
+            "base64"
           );
 
-          const { E, N } = wgs84ToLV95(latitude, longitude);
+          terrain.file("vertices.json", data, { base64: true });
+        }
 
-          return [E, N, pos[0], pos[2]];
-        });
+        const tilesFolder = terrain.folder("tiles");
 
-        Promise.all(positions.map((pos) => getHeight(pos[0], pos[1])))
-          .then((data) =>
-            data.map((height, i) => [
-              positions[i][0] - offsetX,
-              height,
-              // 0,
-              positions[i][1] - offsetY,
-            ])
-          )
-          .then((data) => {
-            const flatValues = data.flatMap((d) => d);
-            ground.setVerticesData(VertexBuffer.PositionKind, flatValues);
-          })
-          .catch((e) => {
-            // eslint-disable-next-line no-alert
-            alert(e);
+        if (tilesFolder != null) {
+          tiles.forEach((tile, i) => {
+            tilesFolder.file(`${i}.png`, tile, { base64: true });
           });
+        }
       }
-    },
-    [offsetX, offsetY, rawXdelta, rawXmin, rawZdelta, rawZmax, xBounds, zBounds]
-  );
+
+      const buildings = zip.folder("buildings");
+      if (buildings != null) {
+        const data = Buffer.from(JSON.stringify(buildingsData)).toString(
+          "base64"
+        );
+
+        buildings.file("buildings.json", data, { base64: true });
+      }
+
+      const trees = zip.folder("trees");
+      if (trees != null) {
+        const data = Buffer.from(JSON.stringify(treesData)).toString("base64");
+
+        trees.file("trees.json", data, { base64: true });
+      }
+
+      zip
+        .generateAsync({ type: "blob" })
+        .then(function (content) {
+          saveAs(content, "data.zip");
+        })
+        .then(() => setExporting(false))
+        .catch((e) => {
+          console.log(e);
+        });
+    }
+  }, [exportedValues]);
 
   return (
     <div
@@ -443,12 +347,13 @@ export default function App() {
           <input
             type="number"
             value={currentCoordinates.maxLatitude}
-            onChange={(e) =>
+            onChange={(e) => {
               setCurrentCoordinates((o) => ({
                 ...o,
                 maxLatitude: Number(e.target.value),
-              }))
-            }
+              }));
+              setExportedValues(undefined);
+            }}
           />
         </div>
         <div
@@ -531,24 +436,39 @@ export default function App() {
           setDataCoordinates(currentCoordinates);
         }}
       >
-        Gather data
+        Set coordinates
       </button>
 
-      <button disabled={exporting} onClick={onExportValues}>
-        Export values
+      <button disabled={generating} onClick={onGenerateValues}>
+        Generate values
       </button>
 
-      <button
-        disabled={exportedValues == null}
-        onClick={() => {
-          setDisplayScene((o) => !o);
-        }}
-      >
-        {displayScene ? "Hide scene" : "Show scene"}
-      </button>
+      {!generating && exportedValues != null && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-around",
+            alignItems: "center",
+          }}
+        >
+          <button disabled={exporting} onClick={onExportValues}>
+            Export data
+          </button>
 
+          <button
+            onClick={() => {
+              setDisplayScene((o) => !o);
+            }}
+          >
+            {displayScene ? "Hide scene" : "Show scene"}
+          </button>
+        </div>
+      )}
+      {/* <div {...containerProps}>
+        <canvas ref={canvasRef} style={canvasProps} />
+      </div> */}
       <canvas ref={canvasRef} style={{ visibility: "hidden" }} />
-
       {displayScene && exportedValues && (
         <ReactScene
           onSceneReady={onSceneReady}
@@ -558,30 +478,14 @@ export default function App() {
           {(_canvas, scene, _engine, _camera, _light) => (
             <>
               {/* <Player scene={scene} position={playerPosition} /> */}
-              {/* <TiledGround
-                scene={scene}
-                zoom={ZOOM}
-                xmin={xmin}
-                xmax={xmax}
-                zmin={zmin}
-                zmax={zmax}
-                terrainData={exportedValues.terrain}
-                subdivisions={groundSubdivisions}
-                onLoad={onOSMGroundLoad}
-              /> */}
-
               <OSMGround
                 scene={scene}
-                zoom={ZOOM}
                 xmin={xmin}
                 xmax={xmax}
                 zmin={zmin}
                 zmax={zmax}
-                xFirstTile={rawXmin}
-                zLastTile={rawZmax}
                 subdivisions={groundSubdivisions}
                 terrainData={exportedValues.terrain}
-                onLoad={onOSMGroundLoad}
               />
 
               {/* <Vision
