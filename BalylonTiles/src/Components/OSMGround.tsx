@@ -38,7 +38,7 @@ interface OSMGroundProps {
   onLoad?: (tiledGround: Mesh) => void;
 }
 
-export const defaultPrecision = { w: 2, h: 2 };
+export const defaultPrecision = { w: 6, h: 6 };
 
 export function OSMGround({
   scene,

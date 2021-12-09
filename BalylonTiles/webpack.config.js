@@ -8,6 +8,7 @@ module.exports = {
   entry: {
     world: path.resolve(appDirectory, "src/entries/index.tsx"),
     data: path.resolve(appDirectory, "src/entries/data.tsx"),
+    test: path.resolve(appDirectory, "src/entries/test.tsx"),
   },
 
   output: {
@@ -33,6 +34,12 @@ module.exports = {
       template: path.resolve(appDirectory, "public/index.html"),
       inject: true,
       chunks: ["data"],
+    }),
+    new HtmlWebpackPlugin({
+      filename: "test/index.html",
+      template: path.resolve(appDirectory, "public/index.html"),
+      inject: true,
+      chunks: ["test"],
     }),
   ],
   module: {

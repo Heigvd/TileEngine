@@ -14,7 +14,7 @@ import { OSMGround, Terrain } from "./Components/OSMGround";
 import { ReactSceneProps, ReactScene } from "./Components/ReactScene";
 import { getTrees, Tree } from "./hooks/useTrees";
 import { debugBoundaries } from "./helpers/debugging";
-import { worldData } from "./helpers/worldData";
+import { WorldData, worldData } from "./helpers/worldData";
 import { ZOOM } from "./config";
 import JSZip from "jszip";
 import saveAs from "file-saver";
@@ -47,10 +47,11 @@ const canvasProps: React.CanvasHTMLAttributes<HTMLCanvasElement> = {
   style: { flex: "1 1 auto" },
 };
 
-interface ExportedValues {
+export interface ExportedValues {
   trees: Tree[];
   buildings: Building[];
   terrain: Terrain;
+  worldData: WorldData;
 }
 
 export default function App() {
@@ -185,6 +186,7 @@ export default function App() {
     setExportedValues(undefined);
     const canvas = canvasRef.current;
     if (canvas) {
+      const data = worldData(dataCoordinates, ZOOM);
       const {
         minLatitude,
         minLongitude,
@@ -197,7 +199,7 @@ export default function App() {
         zmin,
         zmax,
         groundSubdivisions,
-      } = worldData(dataCoordinates, ZOOM);
+      } = data;
 
       const { scene } = createScene(canvas, false, {}, false, {});
 
@@ -234,6 +236,9 @@ export default function App() {
         ),
       ])
         .then(([terrainVertices, tiles, buildingsData, treesData]) => {
+          console.log(buildingsData);
+          debugger;
+
           setExportedValues({
             trees: treesData,
             buildings: buildingsData,
@@ -241,6 +246,7 @@ export default function App() {
               positions: terrainVertices,
               tiles,
             },
+            worldData: data,
           });
         })
         .catch((e) => {
@@ -257,6 +263,7 @@ export default function App() {
 
     if (exportedValues != null) {
       const {
+        worldData,
         buildings: buildingsData,
         terrain: terrainData,
         trees: treesData,
@@ -288,15 +295,19 @@ export default function App() {
         const data = Buffer.from(JSON.stringify(buildingsData)).toString(
           "base64"
         );
-
         buildings.file("buildings.json", data, { base64: true });
       }
 
       const trees = zip.folder("trees");
       if (trees != null) {
         const data = Buffer.from(JSON.stringify(treesData)).toString("base64");
-
         trees.file("trees.json", data, { base64: true });
+      }
+
+      const world = zip.folder("world");
+      if (world != null) {
+        const data = Buffer.from(JSON.stringify(worldData)).toString("base64");
+        world.file("world.json", data, { base64: true });
       }
 
       zip

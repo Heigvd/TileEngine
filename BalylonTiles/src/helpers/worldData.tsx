@@ -2,7 +2,28 @@ import * as React from "react";
 import { DataCoordinates } from "../DataApp";
 import { latLon2pixel, tileToLonLat, wgs84ToLV95 } from "./utils";
 
-export function worldData(dataCoordinates: DataCoordinates, zoom: number) {
+export interface WorldData {
+  zoom: number;
+  minLatitude: number;
+  minLongitude: number;
+  maxLatitude: number;
+  maxLongitude: number;
+  rawXmin: number;
+  rawZmax: number;
+  xmin: number;
+  zmin: number;
+  xmax: number;
+  zmax: number;
+  offsetX: number;
+  offsetZ: number;
+  groundSubdivisions: { h: number; w: number };
+  dataCoordinates: DataCoordinates;
+}
+
+export function worldData(
+  dataCoordinates: DataCoordinates,
+  zoom: number
+): WorldData {
   const minTile = latLon2pixel(
     dataCoordinates.minLatitude,
     dataCoordinates.minLongitude,
@@ -48,6 +69,7 @@ export function worldData(dataCoordinates: DataCoordinates, zoom: number) {
   };
 
   return {
+    zoom,
     minLatitude,
     minLongitude,
     maxLatitude,
@@ -61,5 +83,6 @@ export function worldData(dataCoordinates: DataCoordinates, zoom: number) {
     offsetX,
     offsetZ,
     groundSubdivisions,
+    dataCoordinates,
   };
 }
