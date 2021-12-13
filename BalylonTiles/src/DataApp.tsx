@@ -2,12 +2,10 @@ import {
   Vector3,
   Color3,
   Mesh,
-  VertexBuffer,
   PointLight,
   StandardMaterial,
 } from "@babylonjs/core";
 import * as React from "react";
-import { wgs84ToLV95, getHeight } from "./helpers/utils";
 import { Building, getBuildings } from "./hooks/useBuildings";
 import { Buffer } from "buffer";
 import { OSMGround, Terrain } from "./Components/OSMGround";
@@ -24,8 +22,10 @@ import {
   createScene,
   createTiledGround,
   getGroundHeights,
+  getInitialPosition,
   getTiles,
 } from "./helpers/babylonHelpers";
+import { World } from "./Components/World";
 
 export interface DataCoordinates {
   minLongitude: number;
@@ -52,6 +52,7 @@ export interface ExportedValues {
   buildings: Building[];
   terrain: Terrain;
   worldData: WorldData;
+  initialPosition: [number, number, number];
 }
 
 export default function App() {
@@ -92,11 +93,18 @@ export default function App() {
       //   maxLatitude: 46.9437,
       // }
       //CREUX-DU-VAN (mini)
+      // {
+      //   minLongitude: 6.72,
+      //   maxLongitude: 6.74,
+      //   minLatitude: 46.93,
+      //   maxLatitude: 46.94,
+      // }
+      // Test batiments
       {
-        minLongitude: 6.72,
-        maxLongitude: 6.74,
-        minLatitude: 46.93,
-        maxLatitude: 46.94,
+        minLongitude: 6.65573,
+        maxLongitude: 6.66166,
+        minLatitude: 46.77648,
+        maxLatitude: 46.77887,
       }
     );
 
@@ -121,19 +129,19 @@ export default function App() {
     NonNullable<ReactSceneProps["onSceneReady"]>
   >(
     (_canvas, scene, _engine, camera) => {
-      const initPos = wgs84ToLV95(
-        (maxLatitude + minLatitude) / 2,
-        (maxLongitude + minLongitude) / 2
-      );
+      getInitialPosition(
+        minLatitude,
+        minLongitude,
+        maxLatitude,
+        maxLongitude
+      ).then(([E, H, N]) => {
+        camera.position.x += E - offsetX;
+        camera.position.y += H;
+        camera.position.z += N - offsetZ;
 
-      getHeight(initPos.E, initPos.N).then((height) => {
-        camera.position.x += initPos.E - offsetX;
-        camera.position.y += height;
-        camera.position.z += initPos.N - offsetZ;
-
-        camera.target.x += initPos.E - offsetX;
-        camera.target.y += height;
-        camera.target.z += initPos.N - offsetZ;
+        camera.target.x += E - offsetX;
+        camera.target.y += H;
+        camera.target.z += N - offsetZ;
 
         camera.alpha = (Math.PI * 3) / 2;
         camera.radius = 10;
@@ -234,21 +242,33 @@ export default function App() {
           offsetX,
           offsetZ
         ),
+        getInitialPosition(
+          minLatitude,
+          minLongitude,
+          maxLatitude,
+          maxLongitude
+        ),
       ])
-        .then(([terrainVertices, tiles, buildingsData, treesData]) => {
-          console.log(buildingsData);
-          debugger;
-
-          setExportedValues({
-            trees: treesData,
-            buildings: buildingsData,
-            terrain: {
-              positions: terrainVertices,
-              tiles,
-            },
-            worldData: data,
-          });
-        })
+        .then(
+          ([
+            terrainVertices,
+            tiles,
+            buildingsData,
+            treesData,
+            initialPosition,
+          ]) => {
+            setExportedValues({
+              trees: treesData,
+              buildings: buildingsData,
+              terrain: {
+                positions: terrainVertices,
+                tiles,
+              },
+              worldData: data,
+              initialPosition,
+            });
+          }
+        )
         .catch((e) => {
           console.log(e);
         })
@@ -267,6 +287,7 @@ export default function App() {
         buildings: buildingsData,
         terrain: terrainData,
         trees: treesData,
+        initialPosition,
       } = exportedValues;
       const { positions: terrainVertices, tiles } = terrainData;
       const zip = new JSZip();
@@ -306,8 +327,16 @@ export default function App() {
 
       const world = zip.folder("world");
       if (world != null) {
-        const data = Buffer.from(JSON.stringify(worldData)).toString("base64");
-        world.file("world.json", data, { base64: true });
+        world.file(
+          "world.json",
+          Buffer.from(JSON.stringify(worldData)).toString("base64"),
+          { base64: true }
+        );
+        world.file(
+          "initPosition.json",
+          Buffer.from(JSON.stringify(initialPosition)).toString("base64"),
+          { base64: true }
+        );
       }
 
       zip
@@ -486,30 +515,12 @@ export default function App() {
           containerProps={containerProps}
           canvasProps={canvasProps}
         >
-          {(_canvas, scene, _engine, _camera, _light) => (
-            <>
-              {/* <Player scene={scene} position={playerPosition} /> */}
-              <OSMGround
-                scene={scene}
-                xmin={xmin}
-                xmax={xmax}
-                zmin={zmin}
-                zmax={zmax}
-                subdivisions={groundSubdivisions}
-                terrainData={exportedValues.terrain}
-              />
-
-              {/* <Vision
+          {(_canvas, scene, engine, _camera, _light) => (
+            <World
+              exportedValues={exportedValues}
+              engine={engine}
               scene={scene}
-              buildingsData={buildingsData}
-              playerPosition={playerPosition}
-            /> */}
-              <Buildings
-                scene={scene}
-                buildingsData={exportedValues.buildings}
-              />
-              <Trees scene={scene} treesData={exportedValues.trees} />
-            </>
+            />
           )}
         </ReactScene>
       )}

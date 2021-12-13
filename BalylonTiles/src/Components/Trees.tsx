@@ -11,7 +11,12 @@ interface TreesProps {
 //https://www.html5gamedevs.com/topic/30500-uselogarithmicdepth-and-sprite/#comment-261590
 
 export function Trees({ scene, treesData }: TreesProps) {
+  const treesRef = React.useRef<Sprite[]>([]);
+
   React.useEffect(() => {
+    treesRef.current.forEach((tree) => tree.dispose());
+    treesRef.current = [];
+
     const spriteManagerPlayer = new SpriteManager(
       "treeManager",
       "textures/tree.png",
@@ -24,7 +29,9 @@ export function Trees({ scene, treesData }: TreesProps) {
     treesData.forEach(({ point }) => {
       const tree = new Sprite("tree", spriteManagerPlayer);
       tree.size = 5;
-      tree.position = new Vector3(point.x, point.y + tree.size / 2, point.z);
+      tree.position = new Vector3(point[0], point[1] + tree.size / 2, point[2]);
+
+      treesRef.current.push(tree);
 
       // const sphere = MeshBuilder.CreateSphere(
       //   "sphere",

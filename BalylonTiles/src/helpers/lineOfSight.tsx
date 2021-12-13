@@ -33,13 +33,13 @@ export function filterLineOfSight(
             // nextSegmentIndex: globalIndex - 1 + ((i + 1) % points.length),
             // Calculer angle et distance par rapport à la source
             angle: Math.atan2(
-              point.z - sourcePosition?.z,
-              point.x - sourcePosition?.x
+              point[2] - sourcePosition?.z,
+              point[0] - sourcePosition?.x
             ),
             // endAngle:{
 
             // },
-            squareDistance: point.x * point.x + point.z * point.z,
+            squareDistance: point[0] * point[0] + point[2] * point[2],
           };
         });
       })

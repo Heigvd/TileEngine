@@ -63,7 +63,7 @@ interface OSMData {
 }
 
 export interface Tree {
-  point: Vector3;
+  point: [number, number, number];
 }
 
 export function getTrees(
@@ -93,18 +93,19 @@ export function getTrees(
           const point = wgs84ToLV95(node.lat, node.lon);
 
           return {
-            point: new Vector3(point.E, 0.58, point.N),
+            point: [point.E, 0.58, point.N],
           };
         });
 
         const asyncTrees: Promise<Tree[]> = Promise.all(
           trees.map(async (tree) => {
+            const point: [number, number, number] = [
+              tree.point[0] - offsetX,
+              await getHeight(tree.point[0], tree.point[2]),
+              tree.point[2] - offsetY,
+            ];
             return {
-              point: new Vector3(
-                tree.point.x - offsetX,
-                await getHeight(tree.point.x, tree.point.z),
-                tree.point.z - offsetY
-              ),
+              point,
             };
           })
         ).then((trees) => {

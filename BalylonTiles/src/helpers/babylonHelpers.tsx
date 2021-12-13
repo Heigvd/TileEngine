@@ -10,7 +10,7 @@ import {
   VertexBuffer,
 } from "@babylonjs/core";
 import { defaultPrecision } from "../Components/OSMGround";
-import { getHeight } from "./utils";
+import { getHeight, wgs84ToLV95 } from "./utils";
 
 export function createScene(
   canvas: Nullable<HTMLCanvasElement | WebGLRenderingContext>,
@@ -137,4 +137,17 @@ export function getTiles(tilesURL: string[]) {
     .catch((e) => {
       throw e;
     });
+}
+
+export async function getInitialPosition(
+  minLatitude: number,
+  minLongitude: number,
+  maxLatitude: number,
+  maxLongitude: number
+): Promise<[number, number, number]> {
+  const initPos = wgs84ToLV95(
+    (maxLatitude + minLatitude) / 2,
+    (maxLongitude + minLongitude) / 2
+  );
+  return [initPos.E, await getHeight(initPos.E, initPos.N), initPos.N];
 }

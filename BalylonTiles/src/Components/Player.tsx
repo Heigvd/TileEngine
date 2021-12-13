@@ -1,19 +1,20 @@
-import {
-  ActionManager,
-  ExecuteCodeAction,
-  Scene,
-  Sprite,
-  SpriteManager,
-  Vector3,
-} from "@babylonjs/core";
+import { Scene, Sprite, SpriteManager, Vector3 } from "@babylonjs/core";
 import * as React from "react";
+import { ExportedValues } from "../DataApp";
 
 interface PlayerProps {
   scene: Scene;
-  position?: Vector3;
+  exportedData: ExportedValues;
+  onPlayerMove?: (newPosition: Vector3) => void;
 }
 
-export function Player({ scene, position }: PlayerProps) {
+export function Player({ scene, exportedData, onPlayerMove }: PlayerProps) {
+  const { initialPosition } = exportedData;
+
+  const [position, setPosition] = React.useState(
+    new Vector3(...initialPosition)
+  );
+
   const playerRef = React.useRef<Sprite>();
 
   React.useEffect(() => {
@@ -43,11 +44,54 @@ export function Player({ scene, position }: PlayerProps) {
     //   })
     // );
     playerRef.current = player;
-  }, [scene]);
+
+    // Manage player position (Bad performance, should be done elsewhere )
+    scene.onPointerDown = function (event, pickResult) {
+      const vector: Vector3 = new Vector3();
+
+      if (pickResult.pickedPoint) {
+        //left mouse click
+        // if (event.button == 0) {
+        //   vector = pickResult.pickedPoint;
+        //   console.log(
+        //     "left mouse click: " + vector.x + "," + vector.y + "," + vector.z
+        //   );
+
+        //   const newPosition = new Vector3(vector.x, vector.y + 0.15, vector.z);
+
+        //   setPosition(newPosition);
+        //   onPlayerMove && onPlayerMove(newPosition);
+        // }
+        // //right mouse click
+        if (event.button == 2 && vector) {
+          vector.x = pickResult.pickedPoint.x;
+          vector.y = pickResult.pickedPoint.y;
+          vector.z = pickResult.pickedPoint.z;
+          console.log(
+            "right mouse click: " + vector.x + "," + vector.y + "," + vector.z
+          );
+
+          const newPosition = new Vector3(vector.x, vector.y + 0.15, vector.z);
+
+          setPosition(newPosition);
+          onPlayerMove && onPlayerMove(newPosition);
+        }
+        // //Wheel button or middle button on mouse click
+        // if (event.button == 1) {
+        //   vector["x"] = pickResult.pickedPoint["x"];
+        //   vector["y"] = pickResult.pickedPoint["y"];
+        //   vector["z"] = pickResult.pickedPoint["z"];
+        //   console.log(
+        //     "middle mouse click: " + vector.x + "," + vector.y + "," + vector.z
+        //   );
+        // }
+      }
+    };
+  }, [onPlayerMove, scene]);
 
   React.useEffect(() => {
     const player = playerRef.current;
-    if (player && position) {
+    if (player) {
       player.position = position;
     }
   }, [position]);

@@ -196,10 +196,6 @@ export function debugBoundaries2(
     rawZmax
   );
 
-  console.log("Boundaries start");
-  console.log(A);
-  console.log(D);
-
   const boundaries = MeshBuilder.CreateLines(
     "lines",
     {

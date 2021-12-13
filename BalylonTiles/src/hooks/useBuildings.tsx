@@ -64,7 +64,7 @@ interface OSMData {
 
 export interface Building {
   height: number;
-  points: Vector3[];
+  points: [number, number, number][];
 }
 
 export function getBuildings(
@@ -107,14 +107,16 @@ export function getBuildings(
                   );
 
                   const point = wgs84ToLV95(computedLat, computedLon);
-                  return new Vector3(
+                  return [
                     point.E - offsetX,
                     await getHeight(point.E, point.N),
-                    point.N - offsetY
-                  );
+                    point.N - offsetY,
+                  ];
                 }
               })
-              .filter(function (point): point is Promise<Vector3> {
+              .filter(function (
+                point
+              ): point is Promise<[number, number, number]> {
                 return point != null;
               });
 

@@ -33,7 +33,7 @@ export function Buildings({ scene, buildingsData }: BuildingsProps) {
       const building = MeshBuilder.ExtrudePolygon(
         "building",
         {
-          shape: buildingData.points,
+          shape: buildingData.points.map((point) => new Vector3(...point)),
           depth: buildingData.height,
           sideOrientation: Mesh.DOUBLESIDE,
         },
@@ -41,7 +41,7 @@ export function Buildings({ scene, buildingsData }: BuildingsProps) {
       );
       building.position = new Vector3(
         building.position.x,
-        buildingData.points.reduce((o, point) => o + point.y, 0) /
+        buildingData.points.reduce((o, point) => o + point[1], 0) /
           buildingData.points.length +
           buildingData.height,
         building.position.z
