@@ -32,6 +32,7 @@ import {
   Vector as GeoVector,
   Projectable,
 } from "ink-geom2d";
+import { AStarFinder } from "astar-typescript";
 
 const PLAYER_NB_FRAMES = 11;
 const PLAYER_NB_FRAMES_PER_LINE = 22;
@@ -59,57 +60,6 @@ function drawPoint(
 
 function isRightClick(e: React.MouseEvent<HTMLElement>) {
   return e.button === 2;
-}
-
-interface NodeRecord {
-  node: number;
-  connections: number[];
-  costSoFar: number;
-  estimatedTotalCost: number;
-}
-
-function pathfindAStar(
-  graph: NodeRecord[],
-  start: number,
-  goal: number,
-  heuristic: (start: number, end: number) => number
-) {
-  // This structure is used to keep track of the
-  // information we need for each node
-  // Initialize the record for the start node
-  const startRecord: NodeRecord = {
-    node: start,
-    connections: [],
-    costSoFar: 0,
-    estimatedTotalCost: heuristic(start, goal),
-  };
-
-  // Initialize the open and closed lists
-  const open = [startRecord];
-  const closed = [];
-
-  // Iterate through processing each node
-  while (open.length > 0) {
-    // Find the smallest element in the open list
-    // (using the estimatedTotalCost)
-    const current = open
-      .sort(
-        (nodeRecordA, nodeRecordB) =>
-          nodeRecordB.estimatedTotalCost - nodeRecordA.estimatedTotalCost
-      )
-      .pop()!;
-
-    // If it is the goal node, then terminate
-    if (current.node === goal) {
-      break;
-    }
-
-    // Otherwise get its outgoing connections
-    const connections = graph[current.node].connections;
-
-    for (const connection of connections) {
-    }
-  }
 }
 
 function getNodeNeighbors(
@@ -169,6 +119,13 @@ function nodeToPoint(
     nodeToY(node, gridWidth, gridHeight, worldHeight)
   );
 }
+
+function pointToI(point: Projectable, gridWidth: number, worldWidth: number) {
+  return Math.floor(((point.x + worldWidth / 2) / worldWidth) * gridWidth);
+}
+function pointToJ(point: Projectable, gridHeight: number, worldHeight: number) {
+  return Math.floor(((point.y + worldHeight / 2) / worldHeight) * gridHeight);
+}
 function pointToNode(
   point: Projectable,
   gridWidth: number,
@@ -176,13 +133,10 @@ function pointToNode(
   worldWidth: number,
   worldHeight: number
 ): number {
-  const nodeX = Math.floor(
-    ((point.x + worldWidth / 2) / worldWidth) * gridWidth
+  return (
+    pointToI(point, gridWidth, worldWidth) +
+    pointToJ(point, gridHeight, worldHeight) * gridWidth
   );
-  const nodeY =
-    Math.floor(((point.y + worldHeight / 2) / worldHeight) * gridHeight) *
-    gridWidth;
-  return nodeX + nodeY;
 }
 
 interface LOSIntersection {
@@ -551,11 +505,15 @@ PixiWorldProps) {
   const gridHeight = Math.round(worldHeight / (PLAYER_RADIUS * 2));
 
   const obstacleGrid = React.useRef<boolean[]>([]);
+  const obstacleGrid2 = React.useRef<number[][]>([]);
   React.useEffect(() => {
     const buildingWalls: Segment[][] = [];
 
     for (let j = 0; j < gridHeight; j += 1) {
+      obstacleGrid2.current[j] = [];
       for (let i = 0; i < gridWidth; i += 1) {
+        obstacleGrid2.current[j][i] = 0;
+
         const x = (i / gridWidth) * worldWidth - worldWidth / 2;
         const y =
           0 -
@@ -587,6 +545,7 @@ PixiWorldProps) {
             buildingPoly.contains(pointD.x, pointD.y)
           ) {
             obstacleGrid.current[i + j * gridWidth] = true;
+            obstacleGrid2.current[j][i] = 1;
             break;
           }
 
@@ -612,6 +571,7 @@ PixiWorldProps) {
               wall.intersectionWithSegment(wall4).hasIntersection
             ) {
               obstacleGrid.current[i + j * gridWidth] = true;
+              obstacleGrid2.current[j][i] = 1;
               break;
             }
           }
@@ -641,19 +601,6 @@ PixiWorldProps) {
 
   const onClick = React.useCallback(
     (event: { data: { global: { x: number; y: number } } }) => {
-      // if (pixiApp.current) {
-      //   findPath(
-      //     new Vector(playerPosition.x, playerPosition.z),
-      //     new Vector(
-      //       (event.data.global.x - pixiApp.current.stage.position.x) /
-      //         inertZoom.current,
-      //       (event.data.global.y - pixiApp.current.stage.position.y) /
-      //         inertZoom.current
-      //     ),
-      //     exportedValues.buildings,
-      //     pixiApp.current
-      //     // undefined
-      //   );
       const app = pixiApp.current;
       if (app) {
         const playerPos = new Point(playerPosition.x, playerPosition.z);
@@ -662,56 +609,98 @@ PixiWorldProps) {
           (event.data.global.y - app.stage.position.y) / inertZoom.current
         );
 
-        const playerNode = pointToNode(
-          playerPos,
-          gridWidth,
-          gridHeight,
-          worldWidth,
-          worldHeight
-        );
-        const clickNode = pointToNode(
-          clickPos,
-          gridWidth,
-          gridHeight,
-          worldWidth,
-          worldHeight
+        pointToNode;
+
+        const aStarInstance = new AStarFinder({
+          grid: {
+            matrix: obstacleGrid2.current,
+          },
+          diagonalAllowed: false,
+          heuristic: "Euclidean",
+        });
+
+        const myPathway = aStarInstance.findPath(
+          {
+            x: pointToI(playerPos, gridWidth, worldWidth),
+            y: pointToJ(playerPos, gridHeight, worldHeight),
+          },
+          {
+            x: pointToI(clickPos, gridWidth, worldWidth),
+            y: pointToJ(clickPos, gridHeight, worldHeight),
+          }
         );
 
-        myThetaStar(
-          app,
-          playerNode,
-          clickNode,
-          gridWidth,
-          gridHeight,
-          worldWidth,
-          worldHeight,
-          walls.current,
-          obstacleGrid.current
-        ).then((path) => {
-          if (isWeightedPath(path)) {
-            path.path.forEach((node, i, arr) => {
-              if (i < arr.length - 1) {
-                const nextNode = arr[i + 1];
-                const startNode = nodeToPoint(
-                  node,
-                  gridWidth,
-                  gridHeight,
-                  worldWidth,
-                  worldHeight
-                );
-                const endNode = nodeToPoint(
-                  nextNode,
-                  gridWidth,
-                  gridHeight,
-                  worldWidth,
-                  worldHeight
-                );
-
-                drawLine(app, startNode, endNode);
-              }
-            });
+        myPathway.forEach((node, i, arr) => {
+          if (i < arr.length - 1) {
+            const point = nodeToPoint(
+              node[0] + node[1] * gridWidth,
+              gridWidth,
+              gridHeight,
+              worldWidth,
+              worldHeight
+            );
+            const nextNode = arr[i + 1];
+            const nextPoint = nodeToPoint(
+              nextNode[0] + nextNode[1] * gridWidth,
+              gridWidth,
+              gridHeight,
+              worldWidth,
+              worldHeight
+            );
+            drawLine(app, point, nextPoint);
           }
         });
+
+        // const playerNode = pointToNode(
+        //   playerPos,
+        //   gridWidth,
+        //   gridHeight,
+        //   worldWidth,
+        //   worldHeight
+        // );
+        // const clickNode = pointToNode(
+        //   clickPos,
+        //   gridWidth,
+        //   gridHeight,
+        //   worldWidth,
+        //   worldHeight
+        // );
+
+        // myThetaStar(
+        //   app,
+        //   playerNode,
+        //   clickNode,
+        //   gridWidth,
+        //   gridHeight,
+        //   worldWidth,
+        //   worldHeight,
+        //   walls.current,
+        //   obstacleGrid.current
+        // ).then((path) => {
+        //   if (isWeightedPath(path)) {
+        //     path.path.forEach((node, i, arr) => {
+        //       if (i < arr.length - 1) {
+        //         const nextNode = arr[i + 1];
+        //         const startNode = nodeToPoint(
+        //           node,
+        //           gridWidth,
+        //           gridHeight,
+        //           worldWidth,
+        //           worldHeight
+        //         );
+        //         const endNode = nodeToPoint(
+        //           nextNode,
+        //           gridWidth,
+        //           gridHeight,
+        //           worldWidth,
+        //           worldHeight
+        //         );
+
+        //         drawLine(app, startNode, endNode);
+        //       }
+        //     });
+        //   }
+        // });
       }
     },
     [
