@@ -163,5 +163,8 @@ export function getHeight(easting: number, northing: number) {
     `https://api3.geo.admin.ch/rest/services/height?easting=${easting}&northing=${northing}`
   )
     .then((res) => res.json() as Promise<{ height: string }>)
-    .then(({ height }) => Number(height));
+    .then(({ height }) => {
+      console.log(height);
+      return Number(height);
+    });
 }

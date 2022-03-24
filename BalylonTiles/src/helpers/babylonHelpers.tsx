@@ -107,6 +107,8 @@ export function getGroundHeights(
       positions.push([vertices[i * 3], vertices[i * 3 + 2]]);
     }
 
+    debugger;
+
     return Promise.all(positions.map((pos) => getHeight(pos[0], pos[1])))
       .then((data) =>
         data.map((height, i) => [

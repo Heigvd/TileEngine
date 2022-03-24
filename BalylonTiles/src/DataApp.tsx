@@ -79,12 +79,12 @@ export default function App() {
       //   maxLatitude: 46.029,
       // }
       // CAVANDONE
-      // {
-      //   minLongitude: 8.5113,
-      //   maxLongitude: 8.52738,
-      //   minLatitude: 45.94065,
-      //   maxLatitude: 45.94746,
-      // }
+      {
+        minLongitude: 8.5113,
+        maxLongitude: 8.52738,
+        minLatitude: 45.94065,
+        maxLatitude: 45.94746,
+      }
       //CREUX-DU-VAN
       // {
       //   minLongitude: 6.6991,
@@ -100,16 +100,18 @@ export default function App() {
       //   maxLatitude: 46.94,
       // }
       // Test batiments
-      {
-        minLongitude: 6.65573,
-        maxLongitude: 6.66166,
-        minLatitude: 46.77648,
-        maxLatitude: 46.77887,
-      }
+      // {
+      //   minLongitude: 6.65573,
+      //   maxLongitude: 6.66166,
+      //   minLatitude: 46.77648,
+      //   maxLatitude: 46.77887,
+      // }
     );
 
   const [dataCoordinates, setDataCoordinates] =
     React.useState<DataCoordinates>(currentCoordinates);
+  const [playerPosition, setPlayerPosition] = React.useState(new Vector3());
+  const [visionPolygon, setVisionPoligon] = React.useState<Vector3[]>([]);
 
   const {
     minLatitude,
@@ -222,51 +224,55 @@ export default function App() {
         rawXmin,
         rawZmax
       );
-
       Promise.all([
-        getGroundHeights(tiledGround, offsetX, offsetZ),
+        // getGroundHeights(tiledGround, offsetX, offsetZ),
         getTiles(tilesURL),
-        getBuildings(
-          minLatitude,
-          minLongitude,
-          maxLatitude,
-          maxLongitude,
-          offsetX,
-          offsetZ
-        ),
-        getTrees(
-          minLatitude,
-          minLongitude,
-          maxLatitude,
-          maxLongitude,
-          offsetX,
-          offsetZ
-        ),
-        getInitialPosition(
-          minLatitude,
-          minLongitude,
-          maxLatitude,
-          maxLongitude
-        ),
+        // getBuildings(
+        //   minLatitude,
+        //   minLongitude,
+        //   maxLatitude,
+        //   maxLongitude,
+        //   offsetX,
+        //   offsetZ
+        // ),
+        // getTrees(
+        //   minLatitude,
+        //   minLongitude,
+        //   maxLatitude,
+        //   maxLongitude,
+        //   offsetX,
+        //   offsetZ
+        // ),
+        // getInitialPosition(
+        //   minLatitude,
+        //   minLongitude,
+        //   maxLatitude,
+        //   maxLongitude
+        // ),
       ])
+        // .then((data) => {
+        //   console.log(data);
+        // })
         .then(
           ([
-            terrainVertices,
+            // terrainVertices,
             tiles,
-            buildingsData,
-            treesData,
-            initialPosition,
+            // buildingsData,
+            // treesData,
+            // initialPosition,
           ]) => {
-            setExportedValues({
-              trees: treesData,
-              buildings: buildingsData,
-              terrain: {
-                positions: terrainVertices,
-                tiles,
-              },
-              worldData: data,
-              initialPosition,
-            });
+            console.log(tiles);
+            debugger;
+            // setExportedValues({
+            //   trees: treesData,
+            //   buildings: buildingsData,
+            //   terrain: {
+            //     positions: terrainVertices,
+            //     tiles,
+            //   },
+            //   worldData: data,
+            //   initialPosition,
+            // });
           }
         )
         .catch((e) => {
@@ -276,7 +282,7 @@ export default function App() {
           setGenerating(false);
         });
     }
-  }, [dataCoordinates, offsetX, offsetZ]);
+  }, [dataCoordinates]);
 
   const onExportValues = React.useCallback(() => {
     setExporting(true);
@@ -520,6 +526,10 @@ export default function App() {
               exportedValues={exportedValues}
               engine={engine}
               scene={scene}
+              playerPosition={playerPosition}
+              setPlayerPosition={setPlayerPosition}
+              visionPolygon={visionPolygon}
+              setVisionPolygon={setVisionPoligon}
             />
           )}
         </ReactScene>

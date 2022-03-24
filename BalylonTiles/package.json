@@ -33,6 +33,9 @@
     "webpack-dev-server": "^4.4.0"
   },
   "dependencies": {
+    "@emotion/react": "^11.8.1",
+    "@emotion/styled": "^11.8.1",
+    "@mui/material": "^5.4.3",
     "buffer": "^6.0.3",
     "earcut": "^2.2.3",
     "file-saver": "^2.0.5",
@@ -40,6 +43,7 @@
     "jszip": "^3.7.1",
     "jszip-utils": "^0.1.0",
     "merge-images": "^2.0.0",
+    "pixi.js": "^6.2.2",
     "proj4": "^2.7.5",
     "stream": "^0.0.2",
     "timers": "^0.1.1",

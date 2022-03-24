@@ -1,5 +1,6 @@
 import { Engine, Mesh, Scene, Vector3 } from "@babylonjs/core";
 import * as React from "react";
+import { SharedValues } from "../App";
 import { ExportedValues } from "../DataApp";
 import { isPointInPolygon } from "../helpers/geo";
 import { Buildings } from "./Buildings";
@@ -8,16 +9,21 @@ import { Player } from "./Player";
 import { Trees } from "./Trees";
 import { Vision } from "./Vision";
 
-interface WorldProps {
+interface WorldProps extends SharedValues {
   exportedValues: ExportedValues;
   scene: Scene;
   engine: Engine;
 }
 
-export function World({ exportedValues, engine, scene }: WorldProps) {
-  const [playerPosition, setPlayerPosition] = React.useState(new Vector3());
-  const [visionPolygon, setVisionPoligon] = React.useState<Vector3[]>([]);
-
+export function World({
+  exportedValues,
+  engine,
+  scene,
+  playerPosition,
+  setPlayerPosition,
+  visionPolygon,
+  setVisionPolygon,
+}: WorldProps) {
   const trees = React.useMemo(() => {
     return exportedValues.trees.filter((tree) => {
       return isPointInPolygon(new Vector3(...tree.point), visionPolygon);
@@ -40,7 +46,7 @@ export function World({ exportedValues, engine, scene }: WorldProps) {
         scene={scene}
         exportedData={exportedValues}
         playerPosition={playerPosition}
-        onVision={setVisionPoligon}
+        onVision={setVisionPolygon}
       />
       <Buildings scene={scene} buildingsData={exportedValues.buildings} />
       <Trees scene={scene} treesData={trees} />

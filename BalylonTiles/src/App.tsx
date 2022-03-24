@@ -22,6 +22,16 @@ import { readJSONZipFile } from "./helpers/jszip";
 import { ExportedValues } from "./DataApp";
 import { Player } from "./Components/Player";
 import { World } from "./Components/World";
+import { Grid, Switch, ToggleButton, Typography } from "@mui/material";
+import { Box } from "@mui/system";
+import { PixiWorld } from "./Components/PixiWorld";
+
+export interface SharedValues {
+  playerPosition: Vector3;
+  setPlayerPosition: (pos: Vector3) => void;
+  visionPolygon: Vector3[];
+  setVisionPolygon: (polygon: Vector3[]) => void;
+}
 
 export interface DataCoordinates {
   minLongitude: number;
@@ -45,6 +55,9 @@ const canvasProps: React.CanvasHTMLAttributes<HTMLCanvasElement> = {
 
 export default function App() {
   const [exportedValues, setExportedValues] = React.useState<ExportedValues>();
+  const [displayMode, setDisplayMode] = React.useState<"2D" | "3D">("2D");
+  const [playerPosition, setPlayerPosition] = React.useState(new Vector3());
+  const [visionPolygon, setVisionPoligon] = React.useState<Vector3[]>([]);
 
   const onSceneReady = React.useCallback<
     NonNullable<ReactSceneProps["onSceneReady"]>
@@ -232,22 +245,56 @@ export default function App() {
         value={dataFilePath}
         onChange={(e) => setDataFilePath(e.target.value)}
       />
+      <Box sx={{ width: 250 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item>
+            <Typography id="input-slider" gutterBottom>
+              2D/3D
+            </Typography>
+          </Grid>
+          <Grid item>
+            <Switch
+              value={displayMode == "3D"}
+              onChange={(_evt, value) => setDisplayMode(value ? "3D" : "2D")}
+            />
+          </Grid>
+          <Grid item>
+            <Typography>{displayMode}</Typography>
+          </Grid>
+        </Grid>
+      </Box>
       <button onClick={onGameStart}>Start</button>
 
       {exportedValues && (
-        <ReactScene
-          onSceneReady={onSceneReady}
-          containerProps={containerProps}
-          canvasProps={canvasProps}
-        >
-          {(_canvas, scene, engine, _camera, _light) => (
-            <World
+        <>
+          {displayMode === "3D" ? (
+            <ReactScene
+              onSceneReady={onSceneReady}
+              containerProps={containerProps}
+              canvasProps={canvasProps}
+            >
+              {(_canvas, scene, engine, _camera, _light) => (
+                <World
+                  exportedValues={exportedValues}
+                  engine={engine}
+                  scene={scene}
+                  playerPosition={playerPosition}
+                  setPlayerPosition={setPlayerPosition}
+                  visionPolygon={visionPolygon}
+                  setVisionPolygon={setVisionPoligon}
+                />
+              )}
+            </ReactScene>
+          ) : (
+            <PixiWorld
               exportedValues={exportedValues}
-              engine={engine}
-              scene={scene}
+              playerPosition={playerPosition}
+              setPlayerPosition={setPlayerPosition}
+              visionPolygon={visionPolygon}
+              setVisionPolygon={setVisionPoligon}
             />
           )}
-        </ReactScene>
+        </>
       )}
     </div>
   );
