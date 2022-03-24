@@ -61,6 +61,57 @@ function isRightClick(e: React.MouseEvent<HTMLElement>) {
   return e.button === 2;
 }
 
+interface NodeRecord {
+  node: number;
+  connections: number[];
+  costSoFar: number;
+  estimatedTotalCost: number;
+}
+
+function pathfindAStar(
+  graph: NodeRecord[],
+  start: number,
+  goal: number,
+  heuristic: (start: number, end: number) => number
+) {
+  // This structure is used to keep track of the
+  // information we need for each node
+  // Initialize the record for the start node
+  const startRecord: NodeRecord = {
+    node: start,
+    connections: [],
+    costSoFar: 0,
+    estimatedTotalCost: heuristic(start, goal),
+  };
+
+  // Initialize the open and closed lists
+  const open = [startRecord];
+  const closed = [];
+
+  // Iterate through processing each node
+  while (open.length > 0) {
+    // Find the smallest element in the open list
+    // (using the estimatedTotalCost)
+    const current = open
+      .sort(
+        (nodeRecordA, nodeRecordB) =>
+          nodeRecordB.estimatedTotalCost - nodeRecordA.estimatedTotalCost
+      )
+      .pop()!;
+
+    // If it is the goal node, then terminate
+    if (current.node === goal) {
+      break;
+    }
+
+    // Otherwise get its outgoing connections
+    const connections = graph[current.node].connections;
+
+    for (const connection of connections) {
+    }
+  }
+}
+
 function getNodeNeighbors(
   node: number,
   gridWidth: number,
@@ -119,7 +170,7 @@ function nodeToPoint(
   );
 }
 function pointToNode(
-  point: Point,
+  point: Projectable,
   gridWidth: number,
   gridHeight: number,
   worldWidth: number,
@@ -134,8 +185,18 @@ function pointToNode(
   return nodeX + nodeY;
 }
 
+interface LOSIntersection {
+  sqDistance: number;
+  point: Projectable;
+}
+
+function isLOSIntersection(
+  item: LOSIntersection | undefined
+): item is LOSIntersection {
+  return item != null;
+}
+
 function LOS(
-  app: Application,
   startNode: number,
   endNode: number,
   gridWidth: number,
@@ -143,7 +204,7 @@ function LOS(
   worldWidth: number,
   worldHeight: number,
   walls: Segment[]
-): number {
+): { weight: number; node: number } | undefined {
   const startPoint = nodeToPoint(
     startNode,
     gridWidth,
@@ -159,19 +220,48 @@ function LOS(
     worldHeight
   );
   const straitLine = new Segment(startPoint, endPoint);
-  for (const wall of walls) {
-    const intersection = straitLine.intersectionWithSegment(wall);
-    if (intersection.hasIntersection) {
-      if (intersection.point) {
-        const intersectedSegment = new Segment(startPoint, intersection.point!);
-        return intersectedSegment.length;
-      } else {
-        return -1;
+
+  const intersections: LOSIntersection[] = walls
+    .map((wall) => {
+      const intersection = straitLine.intersectionWithSegment(wall);
+      const intersectionPoint = intersection.point;
+      if (intersection && intersectionPoint) {
+        const sqDistanceX = intersectionPoint.x - startPoint.x;
+        const sqDistanceY = intersectionPoint.y - startPoint.y;
+        return {
+          sqDistance: sqDistanceX * sqDistanceX + sqDistanceY * sqDistanceY,
+          point: intersectionPoint as Projectable,
+        };
       }
-    }
+    })
+    .filter(isLOSIntersection)
+    .sort((a, b) => b.sqDistance - a.sqDistance);
+
+  const closestIntersection = intersections.pop();
+  if (closestIntersection != null) {
+    const intersectedSegment = new Segment(
+      startPoint,
+      closestIntersection.point
+    );
+
+    const newSegmentLength = intersectedSegment.length - PLAYER_RADIUS;
+    const intersectionPointNode = pointToNode(
+      intersectedSegment.directionVector.scaledToLength(
+        newSegmentLength < 0 ? intersectedSegment.length : newSegmentLength
+      ),
+      gridWidth,
+      gridHeight,
+      worldWidth,
+      worldHeight
+    );
+
+    return {
+      weight: Math.sqrt(closestIntersection.sqDistance),
+      node: intersectionPointNode,
+    };
+  } else {
+    return { weight: straitLine.length, node: endNode };
   }
-  // I dont like this sqrt but it's important to keep coherence with weights
-  return straitLine.length;
 }
 
 interface WeightedPath {
@@ -183,7 +273,7 @@ function isWeightedPath(path: WeightedPath | undefined): path is WeightedPath {
   return path != null;
 }
 
-const speed = 50;
+const speed = 100;
 let thetaRunning = false;
 let visitedNodes = 0;
 function myThetaStar(
@@ -196,92 +286,137 @@ function myThetaStar(
   worldHeight: number,
   walls: Segment[],
   obstacleGrid: boolean[],
-  path: number[] = [],
   passed: number[] = [],
   weight: number = 0
-): WeightedPath | undefined {
-  if (weight === 0) {
-    thetaRunning = true;
-    visitedNodes = 0;
-  }
-  console.log(visitedNodes);
-  visitedNodes += 1;
-  if (thetaRunning) {
-    path.push(startNode);
-    // passed.push(startNode);
-
-    const LOSweight = LOS(
-      app,
-      startNode,
-      goalNode,
-      gridWidth,
-      gridHeight,
-      worldWidth,
-      worldHeight,
-      walls
-    );
-    if (LOSweight !== -1) {
-      thetaRunning = false;
-      return { path: [...path, goalNode], weight: weight + LOSweight };
-    } else {
-      const neighbors = getNodeNeighbors(
-        startNode,
-        gridWidth,
-        passed,
-        obstacleGrid
-      );
-      if (neighbors.length === 0) {
-        return;
-      } else {
-        setTimeout(() => {
-          // console.log(neighbors);
-          // debugger;
-
-          neighbors.forEach((neightbor) => {
-            const neightborPoint = nodeToPoint(
-              neightbor,
-              gridWidth,
-              gridHeight,
-              worldWidth,
-              worldHeight
-            );
-            const point = drawPoint(
-              app,
-              neightborPoint.x,
-              neightborPoint.y,
-              0x0fff00,
-              PLAYER_RADIUS
-            );
-
-            setTimeout(() => {
-              point.destroy();
-            }, speed);
-          });
-
-          return neighbors
-            .map((neightbor) =>
-              myThetaStar(
-                app,
-                neightbor,
-                goalNode,
-                gridWidth,
-                gridHeight,
-                worldWidth,
-                worldHeight,
-                walls,
-                obstacleGrid,
-                path,
-                passed,
-                weight + 1
-              )
-            )
-            .filter(isWeightedPath)
-            .sort((pathA, pathB) => pathA.weight - pathB.weight)
-            .pop();
-        }, speed);
-      }
+): Promise<WeightedPath | undefined> {
+  return new Promise<WeightedPath | undefined>((res) => {
+    if (weight === 0) {
+      thetaRunning = true;
+      visitedNodes = 0;
     }
-  }
+    visitedNodes += 1;
+    if (thetaRunning) {
+      const LOSNode = LOS(
+        startNode,
+        goalNode,
+        gridWidth,
+        gridHeight,
+        worldWidth,
+        worldHeight,
+        walls
+      );
+
+      if (LOSNode == null || LOSNode.node === startNode) {
+        res(undefined);
+      } else {
+        if (LOSNode.node === goalNode) {
+          console.log(visitedNodes);
+          thetaRunning = false;
+          const finalPath = [startNode, goalNode];
+          // finalPath.map((node, i, path) => {
+          //   const pathLength = path.length;
+          //   if (i < pathLength - 1) {
+          //     const nextNode = path[i + 1];
+          //     const nodePoint = nodeToPoint(
+          //       node,
+          //       gridWidth,
+          //       gridHeight,
+          //       worldWidth,
+          //       worldHeight
+          //     );
+          //     const nextNodePoint = nodeToPoint(
+          //       nextNode,
+          //       gridWidth,
+          //       gridHeight,
+          //       worldWidth,
+          //       worldHeight
+          //     );
+          //     drawLine(app, nodePoint, nextNodePoint);
+          //   }
+          // });
+          res({ path: finalPath, weight: weight + LOSNode.weight });
+        } else {
+          const newStartNode = passed.includes(LOSNode.node)
+            ? startNode
+            : LOSNode.node;
+          // const newStartNode = LOSNode.node;
+
+          const neighbors = getNodeNeighbors(
+            newStartNode,
+            gridWidth,
+            passed,
+            obstacleGrid
+          );
+          if (neighbors.length === 0) {
+            res(undefined);
+          } else {
+            setTimeout(() => {
+              neighbors.forEach((neightbor) => {
+                const neightborPoint = nodeToPoint(
+                  neightbor,
+                  gridWidth,
+                  gridHeight,
+                  worldWidth,
+                  worldHeight
+                );
+                const point = drawPoint(
+                  app,
+                  neightborPoint.x,
+                  neightborPoint.y,
+                  0x0fff00
+                  // PLAYER_RADIUS
+                );
+                setTimeout(() => {
+                  point.destroy();
+                }, speed);
+              });
+
+              const promises = neighbors.map((neightbor) => {
+                const newPassed = [...passed];
+                return myThetaStar(
+                  app,
+                  neightbor,
+                  goalNode,
+                  gridWidth,
+                  gridHeight,
+                  worldWidth,
+                  worldHeight,
+                  walls,
+                  obstacleGrid,
+                  // passed,
+                  newPassed,
+                  weight + 1
+                );
+              });
+
+              Promise.all(promises).then((weightedPaths) => {
+                const bestPath = weightedPaths
+                  .filter(isWeightedPath)
+                  .sort((pathA, pathB) => pathB.weight - pathA.weight)
+                  .pop();
+
+                if (weight === 0) {
+                  debugger;
+                }
+
+                if (bestPath != null) {
+                  // debugger;
+                  res({
+                    weight: bestPath.weight + weight,
+                    path: [newStartNode, ...bestPath.path],
+                  });
+                } else {
+                  res(undefined);
+                }
+              });
+            }, speed);
+          }
+        }
+      }
+    } else {
+      res(undefined);
+    }
+  });
 }
 
 function drawLine(
@@ -412,8 +547,8 @@ PixiWorldProps) {
   const worldWidth = xmax - xmin;
   const worldHeight = zmax - zmin;
 
-  const gridWidth = Math.round((worldWidth / PLAYER_RADIUS) * 2);
-  const gridHeight = Math.round((worldHeight / PLAYER_RADIUS) * 2);
+  const gridWidth = Math.round(worldWidth / (PLAYER_RADIUS * 2));
+  const gridHeight = Math.round(worldHeight / (PLAYER_RADIUS * 2));
 
   const obstacleGrid = React.useRef<boolean[]>([]);
   React.useEffect(() => {
@@ -422,7 +557,10 @@ PixiWorldProps) {
     for (let j = 0; j < gridHeight; j += 1) {
       for (let i = 0; i < gridWidth; i += 1) {
         const x = (i / gridWidth) * worldWidth - worldWidth / 2;
-        const y = 0 - ((j / gridHeight) * worldHeight - worldHeight / 2);
+        const y =
+          0 -
+          ((j / gridHeight) * worldHeight - worldHeight / 2) -
+          PLAYER_RADIUS * 2;
 
         const pointA = new Point(x, y);
         const pointB = new Point(x, y + PLAYER_RADIUS * 2);
@@ -539,7 +677,7 @@ PixiWorldProps) {
           worldHeight
         );
 
-        const path = myThetaStar(
+        myThetaStar(
           app,
           playerNode,
           clickNode,
@@ -549,28 +687,31 @@ PixiWorldProps) {
           worldHeight,
           walls.current,
           obstacleGrid.current
-        );
-        if (isWeightedPath(path)) {
-          path.path.forEach((node, i, arr) => {
-            const nextNode = arr[(i + 1) % arr.length];
-            const startNode = nodeToPoint(
-              node,
-              gridWidth,
-              gridHeight,
-              worldWidth,
-              worldHeight
-            );
-            const endNode = nodeToPoint(
-              nextNode,
-              gridWidth,
-              gridHeight,
-              worldWidth,
-              worldHeight
-            );
+        ).then((path) => {
+          if (isWeightedPath(path)) {
+            path.path.forEach((node, i, arr) => {
+              if (i < arr.length - 1) {
+                const nextNode = arr[i + 1];
+                const startNode = nodeToPoint(
+                  node,
+                  gridWidth,
+                  gridHeight,
+                  worldWidth,
+                  worldHeight
+                );
+                const endNode = nodeToPoint(
+                  nextNode,
+                  gridWidth,
+                  gridHeight,
+                  worldWidth,
+                  worldHeight
+                );
 
-            drawLine(app, startNode, endNode);
-          });
-        }
+                drawLine(app, startNode, endNode);
+              }
+            });
+          }
+        });
       }
     },
     [
