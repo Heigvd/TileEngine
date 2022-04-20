@@ -1,0 +1,3 @@
+https://github.com/CesiumGS/3d-tiles-samples/blob/main/1.0/TilesetWithTreeBillboards/tileset.json
+https://github.com/CesiumGS/3d-tiles
+map.geo.admin.ch

@@ -25,12 +25,13 @@ import { World } from "./Components/World";
 import { Grid, Switch, ToggleButton, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { PixiWorld } from "./Components/PixiWorld";
+import { VisionPoint } from "./helpers/vision";
 
 export interface SharedValues {
   playerPosition: Vector3;
   setPlayerPosition: (pos: Vector3) => void;
-  visionPolygon: Vector3[];
-  setVisionPolygon: (polygon: Vector3[]) => void;
+  visionPolygon: VisionPoint[];
+  setVisionPolygon: (polygon: VisionPoint[]) => void;
 }
 
 export interface DataCoordinates {
@@ -57,7 +58,7 @@ export default function App() {
   const [exportedValues, setExportedValues] = React.useState<ExportedValues>();
   const [displayMode, setDisplayMode] = React.useState<"2D" | "3D">("2D");
   const [playerPosition, setPlayerPosition] = React.useState(new Vector3());
-  const [visionPolygon, setVisionPoligon] = React.useState<Vector3[]>([]);
+  const [visionPolygon, setVisionPoligon] = React.useState<VisionPoint[]>([]);
 
   const onSceneReady = React.useCallback<
     NonNullable<ReactSceneProps["onSceneReady"]>

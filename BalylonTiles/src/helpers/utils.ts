@@ -1,4 +1,5 @@
 import proj4 from "proj4";
+import * as React from "react";
 
 export function lon2x(lon: number, zoom: number) {
   return ((lon + 180) / 360) * Math.pow(2, zoom);
@@ -167,4 +168,79 @@ export function getHeight(easting: number, northing: number) {
       console.log(height);
       return Number(height);
     });
+}
+
+type ComparaisonTypes = "SIMPLE" | "SHALLOW" | "DEEP";
+function simpleCheck(a: unknown, b: unknown) {
+  return a !== b;
+}
+function shallowCheck(a: unknown, b: unknown, verbose?: boolean) {
+  if (typeof a !== typeof b) {
+    verbose && console.log("Not the same type");
+    return false;
+  }
+  if (typeof a !== "object") {
+    return simpleCheck(a, b);
+  }
+
+  type MyObject = Record<string, unknown>;
+
+  const A = a as MyObject;
+  const B = b as MyObject;
+  const keys = Object.keys(A);
+  if (deepCheck(A, B, verbose)) {
+    verbose && console.log("Objects keys changed");
+    return false;
+  }
+  for (const k in keys) {
+    if (simpleCheck(A[k], B[k])) {
+      verbose && console.log(`Object differ at key : ${k}`);
+      return false;
+    }
+  }
+  return true;
+}
+function deepCheck(a: unknown, b: unknown, verbose?: boolean) {
+  try {
+    return JSON.stringify(a) !== JSON.stringify(b);
+  } catch (e) {
+    verbose && console.log(e);
+    return false;
+  }
+}
+function compFNSelection(compType: ComparaisonTypes) {
+  switch (compType) {
+    case "SIMPLE":
+      return (a: unknown, b: unknown, _verbose?: boolean) => simpleCheck(a, b);
+    case "SHALLOW":
+      return (a: unknown, b: unknown, verbose?: boolean) =>
+        shallowCheck(a, b, verbose);
+    case "DEEP":
+      return (a: unknown, b: unknown, verbose?: boolean) =>
+        deepCheck(a, b, verbose);
+    default:
+      console.log("Comparaison type unvailable. Test will always return false");
+      return () => false;
+  }
+}
+export function useComparator(
+  object: object,
+  compType: ComparaisonTypes = "SIMPLE"
+) {
+  const state = React.useRef(object);
+
+  console.log("\n====== COMPARATOR ======");
+  Object.keys(object).map((k: keyof object) => {
+    const oldValue = state.current[k];
+    const newValue = object[k];
+    if (compFNSelection(compType)(oldValue, newValue)) {
+      console.log(
+        `Changes in ${k} : ${typeof newValue} \n----------------\nOLD : ${
+          compType === "SIMPLE" ? oldValue : JSON.stringify(oldValue)
+        }\nNEW : ${compType === "SIMPLE" ? newValue : JSON.stringify(newValue)}`
+      );
+    }
+  });
+
+  state.current = object;
 }

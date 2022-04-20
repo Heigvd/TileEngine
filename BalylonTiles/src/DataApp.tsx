@@ -26,6 +26,7 @@ import {
   getTiles,
 } from "./helpers/babylonHelpers";
 import { World } from "./Components/World";
+import { VisionPoint } from "./helpers/vision";
 
 export interface DataCoordinates {
   minLongitude: number;
@@ -111,7 +112,7 @@ export default function App() {
   const [dataCoordinates, setDataCoordinates] =
     React.useState<DataCoordinates>(currentCoordinates);
   const [playerPosition, setPlayerPosition] = React.useState(new Vector3());
-  const [visionPolygon, setVisionPoligon] = React.useState<Vector3[]>([]);
+  const [visionPolygon, setVisionPoligon] = React.useState<VisionPoint[]>([]);
 
   const {
     minLatitude,

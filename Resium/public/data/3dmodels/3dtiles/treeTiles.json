@@ -1,0 +1,17 @@
+{
+  "asset": {
+    "version": "1.0"
+  },
+  "geometricError": 5,
+  "root": {
+    "transform": [],
+    "boundingVolume": {
+      "box": [0, 0, 0, 7.0955, 0, 0, 0, 3.1405, 0, 0, 0, 5.0375]
+    },
+    "geometricError": 1,
+    "refine": "REPLACE",
+    "content": {
+      "uri": "../Tree.glb"
+    }
+  }
+}

@@ -5,46 +5,40 @@ import {
   Sprite,
   Polygon,
   BaseTexture,
-  Rectangle,
   AnimatedSprite,
   IPointData,
   Point,
   Graphics,
-  Text,
+  Container,
 } from "pixi.js";
-import JSZip from "jszip";
-import JSZipUtils from "jszip-utils";
-import { readJSONZipFile } from "../helpers/jszip";
-import { Buffer } from "buffer";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Slider from "@mui/material/Slider";
-import { css, Input } from "@mui/material";
+import { Input } from "@mui/material";
 import { SharedValues } from "../App";
-import { SpriteManager, Vector3 } from "@babylonjs/core";
-import { wgs84ToLV95 } from "../helpers/utils";
+import { Projectable, Segment } from "ink-geom2d";
 import {
-  Segment,
-  Vector,
-  Polygon as GeoPolygon,
-  Circle,
-  Vector as GeoVector,
-  Projectable,
-} from "ink-geom2d";
-import { AStarFinder } from "astar-typescript";
+  nodeToPoint,
+  pointToI,
+  pointToJ,
+  pointToNode,
+} from "../helpers/worldGrid";
+import { drawPolygon } from "../helpers/pixi";
+import { Character } from "../Classes/Character";
+import { isPointInPolygon } from "../helpers/geo";
 
 const PLAYER_NB_FRAMES = 11;
 const PLAYER_NB_FRAMES_PER_LINE = 22;
 const PLAYER_FRAME_SIZE = 64;
 const PLAYER_SIZE = 10;
-const PLAYER_RADIUS = 0.5;
+const PLAYER_RADIUS = 1;
 const PLAYER_ANIMATION_SPEED = 0.3;
 
 const ZOOM = 1.0;
 
-function drawPoint(
-  app: Application,
+export function drawPoint(
+  stage: Container,
   x: number,
   y: number,
   color = 0xff0000,
@@ -54,7 +48,7 @@ function drawPoint(
   gr.beginFill(color);
   gr.drawCircle(x, y, size);
   gr.endFill();
-  app.stage.addChild(gr);
+  stage.addChild(gr);
   return gr;
 }
 
@@ -93,131 +87,6 @@ function getNodeNeighbors(
   return neighbors;
 }
 
-function nodeToX(node: number, gridWidth: number, worldWidth: number): number {
-  return (((node % gridWidth) + 0.5) * worldWidth) / gridWidth - worldWidth / 2;
-}
-function nodeToY(
-  node: number,
-  gridWidth: number,
-  gridHeight: number,
-  worldHeight: number
-): number {
-  return (
-    ((Math.floor(node / gridWidth) + 0.5) * worldHeight) / gridHeight -
-    worldHeight / 2
-  );
-}
-function nodeToPoint(
-  node: number,
-  gridWidth: number,
-  gridHeight: number,
-  worldWidth: number,
-  worldHeight: number
-): Point {
-  return new Point(
-    nodeToX(node, gridWidth, worldWidth),
-    nodeToY(node, gridWidth, gridHeight, worldHeight)
-  );
-}
-
-function pointToI(point: Projectable, gridWidth: number, worldWidth: number) {
-  return Math.floor(((point.x + worldWidth / 2) / worldWidth) * gridWidth);
-}
-function pointToJ(point: Projectable, gridHeight: number, worldHeight: number) {
-  return Math.floor(((point.y + worldHeight / 2) / worldHeight) * gridHeight);
-}
-function pointToNode(
-  point: Projectable,
-  gridWidth: number,
-  gridHeight: number,
-  worldWidth: number,
-  worldHeight: number
-): number {
-  return (
-    pointToI(point, gridWidth, worldWidth) +
-    pointToJ(point, gridHeight, worldHeight) * gridWidth
-  );
-}
-
-interface LOSIntersection {
-  sqDistance: number;
-  point: Projectable;
-}
-
-function isLOSIntersection(
-  item: LOSIntersection | undefined
-): item is LOSIntersection {
-  return item != null;
-}
-
-function LOS(
-  startNode: number,
-  endNode: number,
-  gridWidth: number,
-  gridHeight: number,
-  worldWidth: number,
-  worldHeight: number,
-  walls: Segment[]
-): { weight: number; node: number } | undefined {
-  const startPoint = nodeToPoint(
-    startNode,
-    gridWidth,
-    gridHeight,
-    worldWidth,
-    worldHeight
-  );
-  const endPoint = nodeToPoint(
-    endNode,
-    gridWidth,
-    gridHeight,
-    worldWidth,
-    worldHeight
-  );
-  const straitLine = new Segment(startPoint, endPoint);
-
-  const intersections: LOSIntersection[] = walls
-    .map((wall) => {
-      const intersection = straitLine.intersectionWithSegment(wall);
-      const intersectionPoint = intersection.point;
-      if (intersection && intersectionPoint) {
-        const sqDistanceX = intersectionPoint.x - startPoint.x;
-        const sqDistanceY = intersectionPoint.y - startPoint.y;
-        return {
-          sqDistance: sqDistanceX * sqDistanceX + sqDistanceY * sqDistanceY,
-          point: intersectionPoint as Projectable,
-        };
-      }
-    })
-    .filter(isLOSIntersection)
-    .sort((a, b) => b.sqDistance - a.sqDistance);
-
-  const closestIntersection = intersections.pop();
-  if (closestIntersection != null) {
-    const intersectedSegment = new Segment(
-      startPoint,
-      closestIntersection.point
-    );
-
-    const newSegmentLength = intersectedSegment.length - PLAYER_RADIUS;
-    const intersectionPointNode = pointToNode(
-      intersectedSegment.directionVector.scaledToLength(
-        newSegmentLength < 0 ? intersectedSegment.length : newSegmentLength
-      ),
-      gridWidth,
-      gridHeight,
-      worldWidth,
-      worldHeight
-    );
-
-    return {
-      weight: Math.sqrt(closestIntersection.sqDistance),
-      node: intersectionPointNode,
-    };
-  } else {
-    return { weight: straitLine.length, node: endNode };
-  }
-}
-
 interface WeightedPath {
   path: number[];
   weight: number;
@@ -225,177 +94,6 @@ interface WeightedPath {
 
 function isWeightedPath(path: WeightedPath | undefined): path is WeightedPath {
   return path != null;
-}
-
-const speed = 100;
-let thetaRunning = false;
-let visitedNodes = 0;
-function myThetaStar(
-  app: Application,
-  startNode: number,
-  goalNode: number,
-  gridWidth: number,
-  gridHeight: number,
-  worldWidth: number,
-  worldHeight: number,
-  walls: Segment[],
-  obstacleGrid: boolean[],
-  passed: number[] = [],
-  weight: number = 0
-): Promise<WeightedPath | undefined> {
-  return new Promise<WeightedPath | undefined>((res) => {
-    if (weight === 0) {
-      thetaRunning = true;
-      visitedNodes = 0;
-    }
-    visitedNodes += 1;
-    if (thetaRunning) {
-      const LOSNode = LOS(
-        startNode,
-        goalNode,
-        gridWidth,
-        gridHeight,
-        worldWidth,
-        worldHeight,
-        walls
-      );
-
-      if (LOSNode == null || LOSNode.node === startNode) {
-        res(undefined);
-      } else {
-        if (LOSNode.node === goalNode) {
-          console.log(visitedNodes);
-          thetaRunning = false;
-          const finalPath = [startNode, goalNode];
-          // finalPath.map((node, i, path) => {
-          //   const pathLength = path.length;
-          //   if (i < pathLength - 1) {
-          //     const nextNode = path[i + 1];
-          //     const nodePoint = nodeToPoint(
-          //       node,
-          //       gridWidth,
-          //       gridHeight,
-          //       worldWidth,
-          //       worldHeight
-          //     );
-          //     const nextNodePoint = nodeToPoint(
-          //       nextNode,
-          //       gridWidth,
-          //       gridHeight,
-          //       worldWidth,
-          //       worldHeight
-          //     );
-          //     drawLine(app, nodePoint, nextNodePoint);
-          //   }
-          // });
-          res({ path: finalPath, weight: weight + LOSNode.weight });
-        } else {
-          const newStartNode = passed.includes(LOSNode.node)
-            ? startNode
-            : LOSNode.node;
-          // const newStartNode = LOSNode.node;
-
-          const neighbors = getNodeNeighbors(
-            newStartNode,
-            gridWidth,
-            passed,
-            obstacleGrid
-          );
-          if (neighbors.length === 0) {
-            res(undefined);
-          } else {
-            setTimeout(() => {
-              neighbors.forEach((neightbor) => {
-                const neightborPoint = nodeToPoint(
-                  neightbor,
-                  gridWidth,
-                  gridHeight,
-                  worldWidth,
-                  worldHeight
-                );
-                const point = drawPoint(
-                  app,
-                  neightborPoint.x,
-                  neightborPoint.y,
-                  0x0fff00
-                  // PLAYER_RADIUS
-                );
-                setTimeout(() => {
-                  point.destroy();
-                }, speed);
-              });
-
-              const promises = neighbors.map((neightbor) => {
-                const newPassed = [...passed];
-                return myThetaStar(
-                  app,
-                  neightbor,
-                  goalNode,
-                  gridWidth,
-                  gridHeight,
-                  worldWidth,
-                  worldHeight,
-                  walls,
-                  obstacleGrid,
-                  // passed,
-                  newPassed,
-                  weight + 1
-                );
-              });
-
-              Promise.all(promises).then((weightedPaths) => {
-                const bestPath = weightedPaths
-                  .filter(isWeightedPath)
-                  .sort((pathA, pathB) => pathB.weight - pathA.weight)
-                  .pop();
-
-                if (weight === 0) {
-                  debugger;
-                }
-
-                if (bestPath != null) {
-                  // debugger;
-                  res({
-                    weight: bestPath.weight + weight,
-                    path: [newStartNode, ...bestPath.path],
-                  });
-                } else {
-                  res(undefined);
-                }
-              });
-            }, speed);
-          }
-        }
-      }
-    } else {
-      res(undefined);
-    }
-  });
-}
-
-function drawLine(
-  pixiApp: Application,
-  startPos: Projectable,
-  endPos: Projectable,
-  color = 0xff0000,
-  width = 1,
-  opacity = 0.6
-) {
-  // https://jsfiddle.net/bigtimebuddy/h85a7f0b/
-  const graphicLine = new Graphics();
-  // graphicLine.lineStyle(1, Math.random() * 0xffffff, 1);
-  graphicLine.lineStyle(width, color, opacity);
-  // join:"round" ,
-  // cap: "round",
-  // miterLimit: 198
-
-  graphicLine.moveTo(startPos.x, startPos.y);
-  graphicLine.lineTo(endPos.x, endPos.y);
-  // .moveTo(firstPath.start.x, firstPath.start.y)
-  // .lineTo(firstPath.end.x, firstPath.end.y);
-  pixiApp.stage.addChild(graphicLine);
-
-  return graphicLine;
 }
 
 function modifyLandTilesSize(
@@ -494,6 +192,15 @@ PixiWorldProps) {
     x: 0,
     y: 0,
   });
+
+  const playerPositionRef = React.useRef(playerPosition);
+  const charactersRef = React.useRef<Character[]>([]);
+  const playerRef = React.useRef<Character | undefined>(undefined);
+
+  React.useEffect(() => {
+    playerPositionRef.current = playerPosition;
+  }, [playerPosition]);
+
   const pixiApp = React.useRef<Application>();
 
   const { xmin, zmin, xmax, zmax } = exportedValues.worldData;
@@ -506,6 +213,7 @@ PixiWorldProps) {
 
   const obstacleGrid = React.useRef<boolean[]>([]);
   const obstacleGrid2 = React.useRef<number[][]>([]);
+
   React.useEffect(() => {
     const buildingWalls: Segment[][] = [];
 
@@ -578,6 +286,16 @@ PixiWorldProps) {
         }
       }
     }
+
+    playerRef.current?.setPosition(
+      nodeToPoint(
+        Math.floor(Math.random() * obstacleGrid.current.length),
+        gridWidth,
+        gridHeight,
+        worldWidth,
+        worldHeight
+      )
+    );
   }, [
     exportedValues.buildings,
     gridHeight,
@@ -586,6 +304,7 @@ PixiWorldProps) {
     worldWidth,
   ]);
 
+  const playerDot = React.useRef<Graphics | undefined>(undefined);
   const walls = React.useRef<Segment[]>([]);
   React.useEffect(() => {
     walls.current = exportedValues.buildings.flatMap((building) =>
@@ -601,6 +320,8 @@ PixiWorldProps) {
 
   const onClick = React.useCallback(
     (event: { data: { global: { x: number; y: number } } }) => {
+      const playerPosition = playerPositionRef.current;
+
       const app = pixiApp.current;
       if (app) {
         const playerPos = new Point(playerPosition.x, playerPosition.z);
@@ -609,109 +330,51 @@ PixiWorldProps) {
           (event.data.global.y - app.stage.position.y) / inertZoom.current
         );
 
-        pointToNode;
-
-        const aStarInstance = new AStarFinder({
-          grid: {
-            matrix: obstacleGrid2.current,
-          },
-          diagonalAllowed: false,
-          heuristic: "Euclidean",
-        });
-
-        const myPathway = aStarInstance.findPath(
-          {
-            x: pointToI(playerPos, gridWidth, worldWidth),
-            y: pointToJ(playerPos, gridHeight, worldHeight),
-          },
-          {
-            x: pointToI(clickPos, gridWidth, worldWidth),
-            y: pointToJ(clickPos, gridHeight, worldHeight),
-          }
+        //////////////////////////////////777
+        playerDot.current?.destroy();
+        const playerNode = pointToNode(
+          playerRef.current?.getPosition() || new Point(0, 0),
+          gridWidth,
+          gridHeight,
+          worldWidth,
+          worldHeight
         );
+        const playerNodePoint = nodeToPoint(
+          playerNode,
+          gridWidth,
+          gridHeight,
+          worldWidth,
+          worldHeight
+        );
+        playerDot.current = drawPoint(
+          app.stage,
+          playerRef.current?.getPosition()?.x || 0,
+          playerRef.current?.getPosition()?.y || 0,
+          0x00ff00,
+          (PLAYER_RADIUS * 3) / 4
+        );
+        playerDot.current = drawPoint(
+          app.stage,
+          playerNodePoint.x,
+          playerNodePoint.y,
+          0x0000ff,
+          PLAYER_RADIUS / 2
+        );
+        /////////////////////////
 
-        myPathway.forEach((node, i, arr) => {
-          if (i < arr.length - 1) {
-            const point = nodeToPoint(
-              node[0] + node[1] * gridWidth,
-              gridWidth,
-              gridHeight,
-              worldWidth,
-              worldHeight
-            );
-            const nextNode = arr[i + 1];
-            const nextPoint = nodeToPoint(
-              nextNode[0] + nextNode[1] * gridWidth,
-              gridWidth,
-              gridHeight,
-              worldWidth,
-              worldHeight
-            );
-            drawLine(app, point, nextPoint);
-          }
-        });
-
-        // const playerNode = pointToNode(
-        //   playerPos,
-        //   gridWidth,
-        //   gridHeight,
-        //   worldWidth,
-        //   worldHeight
-        // );
-        // const clickNode = pointToNode(
-        //   clickPos,
-        //   gridWidth,
-        //   gridHeight,
-        //   worldWidth,
-        //   worldHeight
-        // );
-
-        // myThetaStar(
-        //   app,
-        //   playerNode,
-        //   clickNode,
-        //   gridWidth,
-        //   gridHeight,
-        //   worldWidth,
-        //   worldHeight,
-        //   walls.current,
-        //   obstacleGrid.current
-        // ).then((path) => {
-        //   if (isWeightedPath(path)) {
-        //     path.path.forEach((node, i, arr) => {
-        //       if (i < arr.length - 1) {
-        //         const nextNode = arr[i + 1];
-        //         const startNode = nodeToPoint(
-        //           node,
-        //           gridWidth,
-        //           gridHeight,
-        //           worldWidth,
-        //           worldHeight
-        //         );
-        //         const endNode = nodeToPoint(
-        //           nextNode,
-        //           gridWidth,
-        //           gridHeight,
-        //           worldWidth,
-        //           worldHeight
-        //         );
-
-        //         drawLine(app, startNode, endNode);
-        //       }
-        //     });
-        //   }
-        // });
+        playerRef.current?.moveTo(
+          clickPos,
+          { grid: obstacleGrid2.current, width: gridWidth, height: gridHeight },
+          { width: worldWidth, height: worldHeight },
+          walls.current
+        );
       }
     },
-    [
-      gridHeight,
-      gridWidth,
-      playerPosition.x,
-      playerPosition.z,
-      worldHeight,
-      worldWidth,
-    ]
+    [gridHeight, gridWidth, worldHeight, worldWidth]
   );
+
+  const visionPolygonRef = React.useRef<Graphics | undefined>(undefined);
+  const lastPlayerPosition = React.useRef<Projectable | undefined>(undefined);
 
   React.useEffect(() => {
     if (ref.current != null) {
@@ -773,34 +436,115 @@ PixiWorldProps) {
           return landTile;
         });
 
-        const playerTexture: BaseTexture = new BaseTexture(
-          "./textures/player.png"
+        /// PLAYER
+        playerRef.current = new Character(
+          app.stage,
+          {
+            texturePath: "./textures/player2.png",
+            frameWidth: 120,
+            frameHeight: 120,
+            startFrame: 8,
+            stopFrame: 16,
+            nbFramePerLine: 8,
+            animationSpeed: 0.1,
+          },
+          PLAYER_RADIUS,
+          nodeToPoint(
+            Math.floor(Math.random() * obstacleGrid.current.length),
+            gridWidth,
+            gridHeight,
+            worldWidth,
+            worldHeight
+          ),
+          exportedValues.buildings
         );
-        const playerFrames = [];
 
-        for (let i = 0; i < PLAYER_NB_FRAMES; i++) {
-          const animatedTexture = new Texture(
-            playerTexture,
-            new Rectangle(
-              (i % PLAYER_NB_FRAMES_PER_LINE) * PLAYER_FRAME_SIZE,
-              Math.floor(i / PLAYER_NB_FRAMES_PER_LINE) * PLAYER_FRAME_SIZE,
-              PLAYER_FRAME_SIZE,
-              PLAYER_FRAME_SIZE
+        playerRef.current.setDebugging(true);
+
+        playerRef.current.addOnPositionChangeListener((playerPosition) => {
+          if (!lastPlayerPosition.current) {
+            lastPlayerPosition.current = {
+              x: playerPosition.x,
+              y: playerPosition.y,
+            };
+          }
+
+          if (pixiApp.current) {
+            const diffX = Math.abs(
+              playerPosition.x - lastPlayerPosition.current.x
+            );
+            const diffY = Math.abs(
+              playerPosition.y - lastPlayerPosition.current.y
+            );
+
+            if (diffX > 0 || diffY > 0) {
+              //   debugger;
+              const visionPoints = playerRef.current
+                ?.getVision()
+                .map(({ point }) => ({ x: point.x, y: 0 - point.y }));
+
+              if (visionPoints) {
+                /////// SHOW VISION
+                if (visionPolygonRef.current) {
+                  visionPolygonRef.current.destroy();
+                }
+                visionPolygonRef.current = drawPolygon(
+                  pixiApp.current.stage,
+                  visionPoints
+                );
+                /////////////////////////////
+                charactersRef.current.forEach((character) => {
+                  const characterPosition = character.getPosition();
+
+                  if (characterPosition) {
+                    if (isPointInPolygon(characterPosition, visionPoints)) {
+                      character.show();
+                    } else {
+                      character.hide();
+                    }
+                  }
+                });
+              }
+            }
+          }
+        });
+
+        // other characters
+        charactersRef.current = [];
+        for (let i = 0; i < 20; i++) {
+          const char = new Character(
+            app.stage,
+            {
+              texturePath: "./textures/player.png",
+              frameWidth: PLAYER_FRAME_SIZE,
+              frameHeight: PLAYER_FRAME_SIZE,
+              startFrame: 0,
+              stopFrame: PLAYER_NB_FRAMES,
+              nbFramePerLine: PLAYER_NB_FRAMES_PER_LINE,
+              animationSpeed: PLAYER_ANIMATION_SPEED,
+            },
+            PLAYER_RADIUS,
+            nodeToPoint(
+              Math.floor(Math.random() * obstacleGrid.current.length),
+              gridWidth,
+              gridHeight,
+              worldWidth,
+              worldHeight
             )
           );
-          // magically works since the spritesheet was loaded with the pixi loader
-          playerFrames.push(animatedTexture);
+
+          char.randomMovement(
+            {
+              grid: obstacleGrid2.current,
+              width: gridWidth,
+              height: gridHeight,
+            },
+            { width: worldWidth, height: worldHeight },
+            walls.current
+          );
+
+          charactersRef.current.push(char);
         }
-
-        // create an AnimatedSprite (brings back memories from the days of Flash, right ?)
-        const anim = new AnimatedSprite(playerFrames);
-        anim.height = PLAYER_SIZE;
-        anim.width = PLAYER_SIZE;
-        anim.animationSpeed = PLAYER_ANIMATION_SPEED;
-        anim.play();
-
-        app.stage.addChild(anim);
-        playerSprite.current = anim;
 
         ///////////////////// BUILDINGS
 
@@ -816,41 +560,32 @@ PixiWorldProps) {
           app.stage.addChild(g);
         });
 
-        ///////////////////////// BIG BUILDINGS ////////////////////////////////////777
-
-        // bigBuildings.current.forEach((building) => {
-        //   const points: IPointData[] = building.points.map(
-        //     ([x, _y, z]) => new Point(x, 0 - z)
-        //   );
-        //   const polygon = new Polygon(points);
-        //   const g = new Graphics();
-        //   g.beginFill(0x0fff00);
-        //   g.alpha = 0.7;
-        //   g.drawPolygon(polygon);
-        //   g.endFill();
-        //   app.stage.addChild(g);
-        // });
-
         /////////////////////////// OBSTACLE GRID ////////////////////////////////////
 
-        // obstacleGrid.current.forEach((obstacle, i) => {
-        //   if (obstacle) {
-        //     const obstacleXY = nodeToPoint(
-        //       i,
-        //       gridWidth,
-        //       gridHeight,
-        //       worldWidth,
-        //       worldHeight
-        //     );
-        //     drawPoint(app, obstacleXY.x, obstacleXY.y, 0xff0000, PLAYER_RADIUS);
-        //   }
-        // });
+        obstacleGrid.current.forEach((obstacle, i) => {
+          if (obstacle) {
+            const obstacleXY = nodeToPoint(
+              i,
+              gridWidth,
+              gridHeight,
+              worldWidth,
+              worldHeight
+            );
+            drawPoint(
+              app.stage,
+              obstacleXY.x,
+              obstacleXY.y,
+              0xff0000,
+              PLAYER_RADIUS
+            );
+          }
+        });
 
         //////////////////////////////// WALLS ///////////////////////////
         // walls.current.forEach((wall) => drawLine(app, wall.start, wall.end));
       }
     }
-  }, [exportedValues, onClick]);
+  }, [exportedValues, gridHeight, gridWidth, onClick]);
 
   React.useEffect(() => {
     if (playerSprite.current != null) {

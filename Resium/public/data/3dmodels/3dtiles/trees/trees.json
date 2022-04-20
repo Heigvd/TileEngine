@@ -1,0 +1,37 @@
+{
+  "asset": {
+    "version": "1.0"
+  },
+  "geometricError": 100,
+  "root": {
+    "boundingVolume": {
+      "region": [
+        -1.3198, 0.6988582109, -1.3196595204101946, 0.6988897891, 0, 40
+      ]
+    },
+    "geometricError": 10,
+    "refine": "REPLACE",
+    "content": {
+      "uri": "tree_billboard.i3dm"
+    },
+    "children": [
+      {
+        "boundingVolume": {
+          "region": [
+            -1.3198, 0.6988582109, -1.3196595204101946, 0.6988897891, 0, 40
+          ]
+        },
+        "geometricError": 0,
+        "content": {
+          "uri": "tree.i3dm"
+        }
+      }
+    ]
+  },
+  "properties": {
+    "Height": {
+      "minimum": 20,
+      "maximum": 20
+    }
+  }
+}

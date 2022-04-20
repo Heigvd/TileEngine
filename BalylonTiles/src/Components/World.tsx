@@ -26,7 +26,10 @@ export function World({
 }: WorldProps) {
   const trees = React.useMemo(() => {
     return exportedValues.trees.filter((tree) => {
-      return isPointInPolygon(new Vector3(...tree.point), visionPolygon);
+      return isPointInPolygon(
+        new Vector3(...tree.point),
+        visionPolygon.map((point) => point.point)
+      );
     });
   }, [exportedValues.trees, visionPolygon]);
 
@@ -41,13 +44,13 @@ export function World({
         subdivisions={exportedValues.worldData.groundSubdivisions}
         terrainData={exportedValues.terrain}
       />
-      <Vision
+      {/* <Vision
         engine={engine}
         scene={scene}
         exportedData={exportedValues}
         playerPosition={playerPosition}
         onVision={setVisionPolygon}
-      />
+      /> */}
       <Buildings scene={scene} buildingsData={exportedValues.buildings} />
       <Trees scene={scene} treesData={trees} />
       <Player

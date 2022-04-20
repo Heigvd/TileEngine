@@ -16,7 +16,8 @@ module.exports = {
     clean: true,
   },
   resolve: {
-    extensions: [".tsx", ".ts", ".js"],
+    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
+    mainFields: ["browser", "module", "main"],
   },
   plugins: [
     new webpack.ProvidePlugin({
@@ -38,7 +39,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.(ts)x?$/,
         use: "ts-loader",
         exclude: /node_modules/,
       },
