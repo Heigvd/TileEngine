@@ -1,0 +1,3 @@
+[submodule "ol-cesium"]
+	path = ol-cesium
+	url = git@github.com:openlayers/ol-cesium.git
